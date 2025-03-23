@@ -7,7 +7,10 @@ export const formResponseSchema = z.object({
   formSettings: z.object({
     title: z.string(),
     tone: z.string(),
+    persona: z.string(),
     journey: z.array(z.string()),
+    targetAudience: z.string(),
+    expectedCompletionTime: z.string(),
     aboutBusiness: z.string(),
     welcomeMessage: z.string(),
     callToAction: z.string(),

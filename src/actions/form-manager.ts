@@ -3,7 +3,7 @@
 import { openai } from "@ai-sdk/openai";
 import { generateObject, Message } from "ai";
 import { z } from "zod";
-import { formResponseSchema } from "@/types/form-manager";
+import { formResponseSchema } from "@/types/promp-schema";
 import { formBuilderSystemPrompt } from "@/system-prompts/builder";
 
 // Type for the form response

@@ -26,7 +26,7 @@ export default function Chat() {
       extractResponseText: (data) => data.responseToUser,
       initialMessages: [
         {
-          id: "1",
+          id: "initial-message",
           role: "assistant",
           content:
             "Let's start creating the form. Give me an idea of what is form created for?",

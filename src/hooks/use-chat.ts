@@ -22,11 +22,12 @@ export function useChat<TResponse>({
     message: Message["content"],
     role: "user" | "assistant"
   ) => {
-    const newId = messages.length;
-    const newMessages = [
-      ...messages,
-      { id: newId.toString(), role, content: message },
-    ];
+    // Generate a unique ID using timestamp + random string to avoid collisions
+    const uniqueId = `msg-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 9)}`;
+
+    const newMessages = [...messages, { id: uniqueId, role, content: message }];
     setMessages(newMessages);
   };
 

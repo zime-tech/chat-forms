@@ -1,11 +1,4 @@
-"use server";
-
-import { openai } from "@ai-sdk/openai";
-import { generateObject, Message } from "ai";
-import { z } from "zod";
-import { formResponseSchema } from "@/types/form-manager";
-
-const systemPrompt = `
+export const formBuilderSystemPrompt = `
 This is a forms platform. This platform is an alternative to Google Forms and type-form.
 What's differentiating this platform is it's AI-native. Both the form creation and form submission through AI-driven chat.
 
@@ -61,20 +54,3 @@ Otherwise, you'll respond with a short summary of the updated form settings.
 
 You're only responsible for generating the form settings.
 `;
-
-// Type for the form response
-export type FormResponse = z.infer<typeof formResponseSchema>;
-
-export async function sendMessage(messages: Message[]) {
-  const result = await generateObject({
-    model: openai("gpt-4o-mini"),
-    schemaName: "form-settings-response",
-    schemaDescription:
-      "Schema for form settings including fields configuration",
-    schema: formResponseSchema,
-    messages,
-    system: systemPrompt,
-  });
-
-  return result.object;
-}

@@ -17,22 +17,42 @@ import {
   CornerDownRight,
   Clock,
   Users,
+  Copy,
+  Link as LinkIcon,
+  Check,
 } from "lucide-react";
+import { Message } from "@ai-sdk/react";
 
-export default function Chat() {
-  const { messages, isLoading, handleSubmit, responseData } =
-    useChat<FormResponse>({
-      sendMessage,
-      extractResponseText: (data) => data.responseToUser,
-      initialMessages: [
-        {
-          id: "initial-message",
-          role: "assistant",
-          content:
-            "Let's start creating the form. Give me an idea of what is form created for?",
-        },
-      ],
-    });
+// Extended message type to match the server-side type
+interface ExtendedMessage extends Message {
+  responseData?: FormResponse;
+}
+
+interface FormBuilderClientProps {
+  formId: string;
+  initialMessages?: Message[];
+}
+
+export default function FormBuilderClient({
+  formId,
+  initialMessages,
+}: FormBuilderClientProps) {
+  const { messages, isLoading, handleSubmit } = useChat<FormResponse>({
+    sendMessage: async (formId, message) => {
+      // Cast the result to ExtendedMessage[] to ensure TypeScript understands
+      // that the messages returned by the server action might have responseData
+      return (await sendMessage(formId, message)) as ExtendedMessage[];
+    },
+    formId,
+    initialMessages: initialMessages || [
+      {
+        id: "initial-message",
+        role: "assistant",
+        content:
+          "Let's start creating the form. Give me an idea of what is form created for?",
+      },
+    ],
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
@@ -40,19 +60,48 @@ export default function Chat() {
   const [lastFormUpdateMessageId, setLastFormUpdateMessageId] = useState<
     string | null
   >(null);
+  const [formSettings, setFormSettings] = useState<
+    FormResponse["formSettings"] | null
+  >(null);
+  const [formSettingsUpdated, setFormSettingsUpdated] = useState(false);
+  const [showSharePopup, setShowSharePopup] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // Update the lastFormUpdateMessageId when form settings are updated
+  // Extract form settings from assistant messages
   useEffect(() => {
-    if (responseData?.formSettingsUpdated && messages.length > 0) {
-      // Find the last assistant message
-      const lastAssistantMessage = [...messages]
-        .reverse()
-        .find((m) => m.role === "assistant");
-      if (lastAssistantMessage) {
-        setLastFormUpdateMessageId(lastAssistantMessage.id);
+    if (messages.length > 0) {
+      // Look for messages with form settings
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const message = messages[i] as ExtendedMessage;
+        if (message.role === "assistant") {
+          // First check if message has responseData directly (new format)
+          if (message.responseData?.formSettings) {
+            setFormSettings(message.responseData.formSettings);
+            setFormSettingsUpdated(true);
+            setLastFormUpdateMessageId(message.id);
+            break;
+          }
+
+          // Fallback to parsing JSON from message content (backward compatibility)
+          try {
+            const match = message.content.match(/```json\n([\s\S]*?)\n```/);
+            if (match && match[1]) {
+              const data = JSON.parse(match[1]);
+              if (data.formSettings) {
+                setFormSettings(data.formSettings);
+                setFormSettingsUpdated(true);
+                setLastFormUpdateMessageId(message.id);
+                break;
+              }
+            }
+          } catch (error) {
+            // Continue if parsing fails
+            console.log("Error parsing form settings from message", error);
+          }
+        }
       }
     }
-  }, [responseData?.formSettingsUpdated, messages]);
+  }, [messages]);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -61,10 +110,20 @@ export default function Chat() {
 
   // Auto-show preview when form settings are updated
   useEffect(() => {
-    if (responseData?.formSettingsUpdated) {
+    if (formSettingsUpdated) {
       setShowPreview(false); // Keep panel closed by default
     }
-  }, [responseData]);
+  }, [formSettingsUpdated]);
+
+  // Reset copy state after 2 seconds
+  useEffect(() => {
+    if (copied) {
+      const timer = setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copied]);
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,6 +131,16 @@ export default function Chat() {
       handleSubmit(e);
       setInputValue("");
     }
+  };
+
+  const handleShareClick = () => {
+    setShowSharePopup(!showSharePopup);
+  };
+
+  const handleCopyLink = () => {
+    const formLink = `${window.location.origin}/forms/${formId}`;
+    navigator.clipboard.writeText(formLink);
+    setCopied(true);
   };
 
   return (
@@ -96,25 +165,64 @@ export default function Chat() {
             </h1>
           </div>
 
-          {lastFormUpdateMessageId && (
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className={`ml-auto flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border 
+          <div className="ml-auto flex items-center gap-2">
+            <div className="relative">
+              <button
+                onClick={handleShareClick}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border bg-white/5 text-white/80 border-white/10 hover:bg-white/10 hover:text-white"
+              >
+                <LinkIcon size={14} />
+                <span className="text-sm">Share</span>
+              </button>
+
+              {showSharePopup && (
+                <div className="absolute right-0 mt-2 w-72 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-lg shadow-purple-900/20 p-4 z-50 animate-fadeIn">
+                  <h3 className="text-sm font-medium text-white/90 mb-2 flex items-center gap-2">
+                    <LinkIcon size={14} className="text-purple-400" />
+                    Form Link
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/80 truncate">
+                      {`${window.location.origin}/form?id=${formId}`}
+                    </div>
+                    <button
+                      onClick={handleCopyLink}
+                      className={`h-8 w-8 flex items-center justify-center rounded-lg transition-all ${
+                        copied
+                          ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                          : "bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10"
+                      }`}
+                    >
+                      {copied ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-white/50 mt-2">
+                    Share this link with others to let them fill your form
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {lastFormUpdateMessageId && (
+              <button
+                onClick={() => setShowPreview(!showPreview)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border 
                 ${
                   showPreview
                     ? "bg-purple-500/20 text-white border-purple-500/30 hover:bg-purple-500/30"
                     : "bg-white/5 text-white/80 border-white/10 hover:bg-white/10 hover:text-white"
                 }`}
-            >
-              <FileText
-                size={14}
-                className={showPreview ? "text-purple-300" : ""}
-              />
-              <span className="text-sm">
-                {showPreview ? "Hide Details" : "View Form Settings"}
-              </span>
-            </button>
-          )}
+              >
+                <FileText
+                  size={14}
+                  className={showPreview ? "text-purple-300" : ""}
+                />
+                <span className="text-sm">
+                  {showPreview ? "Hide Details" : "View Form Settings"}
+                </span>
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Messages Container */}
@@ -122,7 +230,7 @@ export default function Chat() {
           <div className="max-w-3xl mx-auto space-y-6">
             {messages?.map((m, index) => (
               <div
-                key={m.id}
+                key={`${m.id}-${index}`}
                 className={`flex ${
                   m.role === "user" ? "justify-end" : "justify-start"
                 }`}
@@ -160,7 +268,7 @@ export default function Chat() {
 
                   {m.role === "assistant" &&
                     m.id === lastFormUpdateMessageId &&
-                    responseData?.formSettings && (
+                    formSettings && (
                       <div className="mt-4 p-3 rounded-lg bg-gradient-to-br from-white/5 to-purple-500/5 border border-white/10 backdrop-blur-sm animate-fadeIn relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-blue-500/5 to-indigo-500/5 opacity-50"></div>
                         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-blue-500"></div>
@@ -188,7 +296,7 @@ export default function Chat() {
                                   className="text-purple-400 mr-1.5 group-hover:text-purple-300 transition-colors"
                                 />
                                 <span className="text-white font-medium truncate text-xs">
-                                  {responseData.formSettings.title}
+                                  {formSettings.title}
                                 </span>
                               </div>
                               <div className="flex items-center bg-white/5 hover:bg-white/10 transition-all rounded-md px-2 py-1 group">
@@ -197,7 +305,7 @@ export default function Chat() {
                                   className="text-blue-400 mr-1.5 group-hover:text-blue-300 transition-colors"
                                 />
                                 <span className="text-white/90 text-xs">
-                                  {responseData.formSettings.tone}
+                                  {formSettings.tone}
                                 </span>
                               </div>
                             </div>
@@ -210,7 +318,7 @@ export default function Chat() {
                                   className="text-emerald-400 mr-1.5 group-hover:text-emerald-300 transition-colors"
                                 />
                                 <span className="text-white/90 text-xs truncate">
-                                  {responseData.formSettings.persona}
+                                  {formSettings.persona}
                                 </span>
                               </div>
                               <div className="flex items-center bg-white/5 hover:bg-white/10 transition-all rounded-md px-2 py-1 group">
@@ -219,7 +327,7 @@ export default function Chat() {
                                   className="text-amber-400 mr-1.5 group-hover:text-amber-300 transition-colors"
                                 />
                                 <span className="text-white/90 text-xs truncate">
-                                  {responseData.formSettings.targetAudience}
+                                  {formSettings.targetAudience}
                                 </span>
                               </div>
                             </div>
@@ -231,17 +339,14 @@ export default function Chat() {
                                 className="text-indigo-400 mr-1.5 mt-0.5 shrink-0 group-hover:text-indigo-300 transition-colors"
                               />
                               <div className="flex flex-wrap gap-1.5 flex-1">
-                                {responseData.formSettings.journey.map(
-                                  (step, i) => (
+                                {formSettings.journey.map(
+                                  (step: string, i: number) => (
                                     <span
                                       key={i}
                                       className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-white/90 text-xs flex items-center"
                                     >
                                       {step}
-                                      {i <
-                                        responseData.formSettings.journey
-                                          .length -
-                                          1 && (
+                                      {i < formSettings.journey.length - 1 && (
                                         <CornerDownRight
                                           size={8}
                                           className="ml-1 text-indigo-400"
@@ -261,7 +366,7 @@ export default function Chat() {
                                   className="text-green-400 mr-1.5 mt-0.5 shrink-0 group-hover:text-green-300 transition-colors"
                                 />
                                 <p className="text-white/90 text-xs flex-1 line-clamp-2">
-                                  {responseData.formSettings.aboutBusiness}
+                                  {formSettings.aboutBusiness}
                                 </p>
                               </div>
 
@@ -272,7 +377,7 @@ export default function Chat() {
                                   className="text-cyan-400 mr-1.5 mt-0.5 shrink-0 group-hover:text-cyan-300 transition-colors"
                                 />
                                 <p className="text-white/90 text-xs flex-1 line-clamp-2">
-                                  {responseData.formSettings.welcomeMessage}
+                                  {formSettings.welcomeMessage}
                                 </p>
                               </div>
                             </div>
@@ -285,7 +390,7 @@ export default function Chat() {
                                   className="text-yellow-400 mr-1.5 mt-0.5 shrink-0 group-hover:text-yellow-300 transition-colors"
                                 />
                                 <p className="text-white/90 text-xs flex-1 line-clamp-1">
-                                  {responseData.formSettings.callToAction}
+                                  {formSettings.callToAction}
                                 </p>
                               </div>
 
@@ -296,7 +401,7 @@ export default function Chat() {
                                   className="text-red-400 mr-1.5 mt-0.5 shrink-0 group-hover:text-red-300 transition-colors"
                                 />
                                 <p className="text-white/90 text-xs flex-1 line-clamp-1">
-                                  {responseData.formSettings.endScreenMessage}
+                                  {formSettings.endScreenMessage}
                                 </p>
                               </div>
                             </div>
@@ -308,10 +413,7 @@ export default function Chat() {
                                 className="text-pink-400 mr-1.5 group-hover:text-pink-300 transition-colors"
                               />
                               <span className="text-white/90 text-xs">
-                                {
-                                  responseData.formSettings
-                                    .expectedCompletionTime
-                                }
+                                {formSettings.expectedCompletionTime}
                               </span>
                             </div>
                           </div>
@@ -362,7 +464,7 @@ export default function Chat() {
       </div>
 
       {/* Form Settings Preview Panel */}
-      {lastFormUpdateMessageId && responseData?.formSettings && (
+      {lastFormUpdateMessageId && formSettings && (
         <div
           className={`fixed inset-y-0 right-0 w-full max-w-md backdrop-blur-xl border-l transition-all duration-300 ease-in-out z-20
             ${
@@ -400,9 +502,7 @@ export default function Chat() {
                   <FileText size={16} />
                   TITLE
                 </div>
-                <h3 className="text-lg font-semibold">
-                  {responseData.formSettings.title}
-                </h3>
+                <h3 className="text-lg font-semibold">{formSettings.title}</h3>
               </div>
 
               {/* Tone */}
@@ -416,7 +516,7 @@ export default function Chat() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 rounded-full bg-blue-500/20 text-white text-sm">
-                    {responseData.formSettings.tone}
+                    {formSettings.tone}
                   </span>
                 </div>
               </div>
@@ -430,9 +530,7 @@ export default function Chat() {
                   <User size={16} />
                   PERSONA
                 </div>
-                <p className="text-white/80">
-                  {responseData.formSettings.persona}
-                </p>
+                <p className="text-white/80">{formSettings.persona}</p>
               </div>
 
               {/* Target Audience */}
@@ -444,9 +542,7 @@ export default function Chat() {
                   <Users size={16} />
                   TARGET AUDIENCE
                 </div>
-                <p className="text-white/80">
-                  {responseData.formSettings.targetAudience}
-                </p>
+                <p className="text-white/80">{formSettings.targetAudience}</p>
               </div>
 
               {/* Journey */}
@@ -459,11 +555,11 @@ export default function Chat() {
                   JOURNEY
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {responseData.formSettings.journey.map((step, i) => (
+                  {formSettings.journey.map((step: string, i: number) => (
                     <div key={i} className="flex items-center gap-1">
                       <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-white text-sm flex items-center">
                         {step}
-                        {i < responseData.formSettings.journey.length - 1 && (
+                        {i < formSettings.journey.length - 1 && (
                           <CornerDownRight
                             size={14}
                             className="ml-2 text-indigo-400"
@@ -484,9 +580,7 @@ export default function Chat() {
                   <Building size={16} />
                   ABOUT BUSINESS
                 </div>
-                <p className="text-white/80">
-                  {responseData.formSettings.aboutBusiness}
-                </p>
+                <p className="text-white/80">{formSettings.aboutBusiness}</p>
               </div>
 
               {/* Welcome Message */}
@@ -498,9 +592,7 @@ export default function Chat() {
                   <BellRing size={16} />
                   WELCOME MESSAGE
                 </div>
-                <p className="text-white/80">
-                  {responseData.formSettings.welcomeMessage}
-                </p>
+                <p className="text-white/80">{formSettings.welcomeMessage}</p>
               </div>
 
               {/* Call To Action */}
@@ -512,9 +604,7 @@ export default function Chat() {
                   <Send size={16} />
                   CALL TO ACTION
                 </div>
-                <p className="text-white/80">
-                  {responseData.formSettings.callToAction}
-                </p>
+                <p className="text-white/80">{formSettings.callToAction}</p>
               </div>
 
               {/* End Screen Message */}
@@ -526,9 +616,7 @@ export default function Chat() {
                   <MessageCircle size={16} />
                   END SCREEN MESSAGE
                 </div>
-                <p className="text-white/80">
-                  {responseData.formSettings.endScreenMessage}
-                </p>
+                <p className="text-white/80">{formSettings.endScreenMessage}</p>
               </div>
 
               {/* Expected Completion Time */}
@@ -541,7 +629,7 @@ export default function Chat() {
                   EXPECTED COMPLETION TIME
                 </div>
                 <p className="text-white/80">
-                  {responseData.formSettings.expectedCompletionTime}
+                  {formSettings.expectedCompletionTime}
                 </p>
               </div>
             </div>

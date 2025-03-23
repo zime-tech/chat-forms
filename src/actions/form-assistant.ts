@@ -8,6 +8,12 @@ import {
   formSettingsSchema,
 } from "@/types/promp-schema";
 import { formAssistantSystemPrompt } from "@/system-prompts/assistant";
+import {
+  addFormSessionMessages,
+  getForm,
+  getFormSessionMessages,
+} from "@/db/storage";
+import { ExtendedMessage } from "@/db/schema";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -28,20 +34,47 @@ const formatMessageContent = (
 };
 
 export async function sendMessage(
-  messages: Message[],
-  formSettings: FormSettings
+  formId: string,
+  sessionId: string,
+  message: Message
 ) {
+  const messages = await getFormSessionMessages(sessionId);
+  const newMessages: ExtendedMessage[] = [...messages, message];
+
+  await addFormSessionMessages(sessionId, [message]);
+
+  const formSettings = await getForm(formId);
+
   const result = await generateObject({
     model: openai("gpt-4o-mini"),
     schemaName: "form-assistant-response",
     schemaDescription: "Schema for form assistant response",
     schema: formAssistantResponseSchema,
-    messages: messages.map((message) => ({
-      ...message,
-      content: formatMessageContent(message, formSettings),
+    messages: newMessages.map((msg) => ({
+      id: msg.id,
+      role: msg.role,
+      content: formatMessageContent(
+        msg,
+        formSettings as unknown as FormSettings
+      ),
     })),
     system: formAssistantSystemPrompt,
   });
 
-  return result.object;
+  const messageId = `msg-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
+
+  const assistantMessage: ExtendedMessage = {
+    id: messageId,
+    content: result.object.responseToUser,
+    role: "assistant",
+    responseData: result.object as FormAssistantResponse,
+  };
+
+  await addFormSessionMessages(sessionId, [assistantMessage]);
+
+  newMessages.push(assistantMessage);
+
+  return newMessages;
 }

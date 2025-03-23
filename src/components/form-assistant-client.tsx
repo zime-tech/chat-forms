@@ -3,7 +3,7 @@
 import {
   FormAssistantResponse,
   FormSettings,
-  sendMessage,
+  sendMessage as serverSendMessage,
 } from "@/actions/form-assistant";
 import { useChat } from "@/hooks/use-chat";
 import { useState, useEffect, useRef } from "react";
@@ -15,6 +15,8 @@ import {
   ArrowRight,
   CheckCircle,
 } from "lucide-react";
+import { Message } from "@ai-sdk/react";
+import { ExtendedMessage } from "@/db/schema";
 
 const sampleSettings: FormSettings = {
   title: "Chatoura User Feedback",
@@ -37,21 +39,59 @@ const sampleSettings: FormSettings = {
     "Thank you for taking the time to share your thoughts. Your feedback is invaluable to us.",
 };
 
-export default function FormChat() {
-  const [started, setStarted] = useState(false);
+interface FormAssistantClientProps {
+  sessionId: string;
+  formId: string;
+}
 
-  const { messages, isLoading, handleSubmit, responseData, addMessage } =
-    useChat<FormAssistantResponse>({
-      sendMessage: (messages) => sendMessage(messages, sampleSettings),
-      extractResponseText: (data) => data.responseToUser,
-      initialMessages: [
-        {
-          id: "initial-message",
-          role: "assistant",
-          content: sampleSettings.welcomeMessage,
-        },
-      ],
-    });
+export default function FormAssistantClient({
+  sessionId,
+  formId,
+}: FormAssistantClientProps) {
+  const [started, setStarted] = useState(false);
+  const [isFormCompleted, setIsFormCompleted] = useState(false);
+  const [allMessages, setAllMessages] = useState<ExtendedMessage[]>([]);
+
+  const { messages, isLoading, handleSubmit } = useChat<FormAssistantResponse>({
+    sendMessage: async (
+      formId: string,
+      message: Message
+    ): Promise<Message[]> => {
+      // Store the current messages for reference
+      const currentMessages = [...allMessages, message];
+      setAllMessages(currentMessages);
+
+      try {
+        // Call server with the message
+        // The server action returns an array of messages
+        const result = await serverSendMessage(formId, sessionId, message);
+
+        // Find the assistant message in the returned array - should be the last one
+        const assistantMessage = result[result.length - 1] as ExtendedMessage;
+
+        if (!assistantMessage || assistantMessage.role !== "assistant") {
+          throw new Error("No valid assistant message found in response");
+        }
+
+        // Return updated messages list - include all messages from the server
+        const updatedMessages = [...currentMessages, assistantMessage];
+        setAllMessages(updatedMessages);
+        return updatedMessages;
+      } catch (error) {
+        console.error("Error in form assistant:", error);
+        // Return original messages on error
+        return currentMessages;
+      }
+    },
+    formId,
+    initialMessages: [
+      {
+        id: "initial-message",
+        role: "assistant",
+        content: sampleSettings.welcomeMessage,
+      },
+    ],
+  });
 
   const [inputValue, setInputValue] = useState("");
   const [userMessage, setUserMessage] = useState("");
@@ -67,28 +107,45 @@ export default function FormChat() {
     .find((m) => m.role === "assistant");
 
   // Check if form is completed from response data
-  const isFormCompleted = responseData?.formCompleted === true;
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Look for messages with form completion data
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const message = messages[i] as ExtendedMessage;
+        if (message.role === "assistant" && message.responseData) {
+          // Check if the responseData has the formCompleted property
+          if (
+            "formCompleted" in message.responseData &&
+            message.responseData.formCompleted
+          ) {
+            setIsFormCompleted(true);
+            break;
+          }
+        }
+      }
+    }
+  }, [messages]);
 
   // Handle animations when messages change
   useEffect(() => {
-    if (
-      latestAssistantMessage &&
-      latestAssistantMessage.content !== prevAssistantMessage
-    ) {
-      if (prevAssistantMessage) {
-        // Trigger fade-out animation
-        setAnimateOut(true);
+    if (latestAssistantMessage) {
+      // If we have a new message
+      if (prevAssistantMessage !== latestAssistantMessage.content) {
+        // Trigger fade-out animation if we had a previous message
+        if (prevAssistantMessage) {
+          setAnimateOut(true);
 
-        // After animation completes, update to new message
-        const timer = setTimeout(() => {
+          // After animation completes, update state and fade in
+          const timer = setTimeout(() => {
+            setPrevAssistantMessage(latestAssistantMessage.content);
+            setAnimateOut(false);
+          }, 300); // Match this to the animation duration
+
+          return () => clearTimeout(timer);
+        } else {
+          // First message, no animation needed
           setPrevAssistantMessage(latestAssistantMessage.content);
-          setAnimateOut(false);
-        }, 300); // Match this to the animation duration
-
-        return () => clearTimeout(timer);
-      } else {
-        // First message, no animation needed
-        setPrevAssistantMessage(latestAssistantMessage.content);
+        }
       }
     }
   }, [latestAssistantMessage, prevAssistantMessage]);
@@ -112,10 +169,21 @@ export default function FormChat() {
   // Handle start button click
   const handleStartClick = () => {
     setStarted(true);
-    // Use addMessage directly instead of going through the form submission
     setUserMessage("start_form");
-    // Add the message and trigger the response flow
-    addMessage("start_form", "user");
+    setInputValue("start_form");
+
+    // Use setTimeout to ensure state is updated before submitting the form
+    setTimeout(() => {
+      // Find the form element and dispatch a submit event
+      const form = document.querySelector("form");
+      if (form) {
+        const submitEvent = new Event("submit", {
+          bubbles: true,
+          cancelable: true,
+        });
+        form.dispatchEvent(submitEvent);
+      }
+    }, 10);
   };
 
   // Clear input after receiving response
@@ -207,7 +275,7 @@ export default function FormChat() {
                   </div>
                 </div>
                 <div className="whitespace-pre-wrap text-white/90 text-lg">
-                  {prevAssistantMessage || latestAssistantMessage.content}
+                  {latestAssistantMessage.content}
                 </div>
               </div>
             </div>

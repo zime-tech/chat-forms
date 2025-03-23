@@ -4,72 +4,67 @@ import { Message } from "@ai-sdk/react";
 import { useEffect, useState } from "react";
 
 export type ChatOptions<TResponse> = {
-  sendMessage: (messages: Message[]) => Promise<TResponse>;
-  extractResponseText: (response: TResponse) => string;
+  sendMessage: (formId: string, message: Message) => Promise<Message[]>;
+  formId: string;
   initialMessages?: Message[];
 };
 
 export function useChat<TResponse>({
   sendMessage,
-  extractResponseText,
+  formId,
   initialMessages = [],
 }: ChatOptions<TResponse>) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
-  const [responseData, setResponseData] = useState<TResponse | null>(null);
-
-  const addMessage = (
-    message: Message["content"],
-    role: "user" | "assistant"
-  ) => {
-    // Generate a unique ID using timestamp + random string to avoid collisions
-    const uniqueId = `msg-${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 9)}`;
-
-    const newMessages = [...messages, { id: uniqueId, role, content: message }];
-    setMessages(newMessages);
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const input = (e.target as HTMLFormElement).elements[0] as HTMLInputElement;
-    addMessage(input.value, "user");
+    const userMessage = input.value;
     input.value = "";
-  };
 
-  useEffect(() => {
-    const fetchResponse = async () => {
-      setIsLoading(true);
-      try {
-        const data = await sendMessage(messages);
-        setResponseData(data);
-        addMessage(extractResponseText(data), "assistant");
-      } catch (error) {
-        console.error("Error fetching response:", error);
-        addMessage(
-          "Sorry, there was an error processing your request.",
-          "assistant"
-        );
-      } finally {
-        setIsLoading(false);
-      }
+    if (!userMessage.trim()) return;
+
+    // Create a temporary message ID
+    const messageId = `msg-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 9)}`;
+
+    // Create the message object
+    const message: Message = {
+      id: messageId,
+      role: "user",
+      content: userMessage,
     };
 
-    if (
-      messages.length > 0 &&
-      messages[messages.length - 1].role === "user" &&
-      !isLoading
-    ) {
-      fetchResponse();
+    // Show optimistic UI update
+    setMessages([...messages, message]);
+
+    // Send the message to the action
+    setIsLoading(true);
+    try {
+      const updatedMessages = await sendMessage(formId, message);
+      // Update with the authoritative message list from the server
+      setMessages(updatedMessages);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Revert to previous messages if there's an error
+      setMessages([
+        ...messages,
+        {
+          id: `error-${Date.now()}`,
+          role: "assistant",
+          content: "Sorry, there was an error processing your request.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [messages, isLoading, sendMessage, extractResponseText]);
+  };
 
   return {
     messages,
     isLoading,
     handleSubmit,
-    addMessage,
-    responseData,
   };
 }

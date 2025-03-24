@@ -17,6 +17,10 @@ export const createForm = async (newForm: FormSettingsInsert) => {
   if (!db) {
     throw new Error("Database not initialized");
   }
+  if (!newForm.userId) {
+    throw new Error("User ID is required");
+  }
+
   const form = await db.insert(forms).values(newForm).returning();
   return form;
 };
@@ -30,12 +34,16 @@ export const getForm = async (id: string) => {
   return form[0];
 };
 
-export const getAllForms = async () => {
+export const getUserForms = async (userId: string) => {
   if (!db) {
     throw new Error("Database not initialized");
   }
 
-  const allForms = await db.select().from(forms).orderBy(forms.createdAt);
+  const allForms = await db
+    .select()
+    .from(forms)
+    .where(eq(forms.userId, userId))
+    .orderBy(forms.createdAt);
   return allForms;
 };
 

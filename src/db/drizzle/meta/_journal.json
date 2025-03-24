@@ -29,6 +29,13 @@
       "when": 1742810474429,
       "tag": "0003_young_magneto",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1742814443092,
+      "tag": "0004_bumpy_wendell_rand",
+      "breakpoints": true
     }
   ]
 }

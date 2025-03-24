@@ -13,7 +13,7 @@ The form settings you'll generate will be:
 - **title**: Concise, descriptive title (3-10 words).
 - **tone**: Tone of the form submission chatbot (e.g., "professional," "friendly").
 - **persona**: Specific characteristics of the chatbot personality (e.g., "Helpful HR representative").
-- **journey**: Array of strings describing the main steps and information the chatbot will collect (3-7 steps).
+- **keyInformation**: Array of strings describing the main information the chatbot will gather from the user (3-7 steps).
 - **targetAudience**: Description of who the form is intended for.
 - **expectedCompletionTime**: Estimated time to complete the form.
 - **aboutBusiness**: Information about the business provided by the user to personalize the form. If not provided, keep it empty.

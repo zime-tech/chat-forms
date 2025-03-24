@@ -108,21 +108,21 @@ export default function FormSettingsDetail({
             <p className="text-white/80">{formSettings.targetAudience}</p>
           </div>
 
-          {/* Journey */}
+          {/* Key Information */}
           <div
             className="p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all hover:shadow-lg hover:shadow-purple-500/5 animate-slideIn"
             style={{ animationDelay: "175ms" }}
           >
             <div className="flex items-center gap-2 text-indigo-400 mb-2 text-sm font-medium">
               <Award size={16} />
-              JOURNEY
+              Key Information
             </div>
             <div className="flex flex-wrap gap-2">
-              {formSettings.journey.map((step: string, i: number) => (
+              {formSettings.keyInformation.map((step: string, i: number) => (
                 <div key={i} className="flex items-center gap-1">
                   <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-white text-sm flex items-center">
                     {step}
-                    {i < formSettings.journey.length - 1 && (
+                    {i < formSettings.keyInformation.length - 1 && (
                       <CornerDownRight
                         size={14}
                         className="ml-2 text-indigo-400"

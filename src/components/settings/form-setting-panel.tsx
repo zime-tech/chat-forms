@@ -59,16 +59,16 @@ export default function FormSettingsPanel({
     }));
   };
 
-  const handleJourneyItemChange = (index: number, value: string) => {
-    const updatedJourney = [...settings.journey];
-    updatedJourney[index] = value;
-    handleInputChange("journey", updatedJourney);
+  const handleKeyInformationItemChange = (index: number, value: string) => {
+    const updatedKeyInformation = [...settings.keyInformation];
+    updatedKeyInformation[index] = value;
+    handleInputChange("keyInformation", updatedKeyInformation);
   };
 
-  const handleRemoveJourneyItem = (index: number) => {
-    const updatedJourney = [...settings.journey];
-    updatedJourney.splice(index, 1);
-    handleInputChange("journey", updatedJourney);
+  const handleRemoveKeyInformationItem = (index: number) => {
+    const updatedKeyInformation = [...settings.keyInformation];
+    updatedKeyInformation.splice(index, 1);
+    handleInputChange("keyInformation", updatedKeyInformation);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -321,11 +321,11 @@ export default function FormSettingsPanel({
               </div>
             </section>
 
-            {/* User Journey */}
+            {/* Key Information */}
             <section className="relative space-y-4 bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 shadow-lg">
               <h2 className="text-xl font-semibold text-white border-b border-gray-700 pb-2 flex items-center">
                 <ListOrdered size={20} className="mr-2 text-purple-400" />
-                User Journey
+                Key Information
               </h2>
 
               <div className="space-y-2">
@@ -335,28 +335,31 @@ export default function FormSettingsPanel({
                       size={16}
                       className="mr-2 text-purple-400 opacity-70"
                     />
-                    Journey Steps
+                    Key Information
                   </label>
                   <button
                     type="button"
                     onClick={() => {
-                      handleInputChange("journey", [...settings.journey, ""]);
+                      handleInputChange("keyInformation", [
+                        ...settings.keyInformation,
+                        "",
+                      ]);
                     }}
                     className="inline-flex items-center px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 rounded-md text-white transition-colors duration-200 shadow-md"
                   >
                     <Plus size={16} className="mr-1" />
-                    Add Step
+                    Add Key Information Item
                   </button>
                 </div>
 
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                  {settings.journey?.length === 0 ? (
+                  {settings.keyInformation?.length === 0 ? (
                     <div className="text-gray-400 italic text-sm py-2">
-                      No journey steps added yet. Add steps to guide users
-                      through your form.
+                      No key information steps added yet. Add steps to guide
+                      users through your form.
                     </div>
                   ) : (
-                    settings.journey?.map((step, index) => (
+                    settings.keyInformation?.map((step, index) => (
                       <div
                         key={index}
                         className="flex items-center gap-2 bg-gray-800/50 border border-gray-700/50 rounded-md overflow-hidden group"
@@ -368,14 +371,17 @@ export default function FormSettingsPanel({
                           type="text"
                           value={step}
                           onChange={(e) =>
-                            handleJourneyItemChange(index, e.target.value)
+                            handleKeyInformationItemChange(
+                              index,
+                              e.target.value
+                            )
                           }
                           className="flex-1 px-3 py-2 bg-transparent border-none text-white focus:ring-0 focus:outline-none"
                           placeholder={`Step ${index + 1} description`}
                         />
                         <button
                           type="button"
-                          onClick={() => handleRemoveJourneyItem(index)}
+                          onClick={() => handleRemoveKeyInformationItem(index)}
                           className="p-2 text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 size={16} />

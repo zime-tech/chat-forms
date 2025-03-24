@@ -14,7 +14,7 @@ export interface FormSettings {
   tone: string;
   persona: string;
   targetAudience: string;
-  journey: string[];
+  keyInformation: string[];
   aboutBusiness: string;
   welcomeMessage: string;
   callToAction: string;

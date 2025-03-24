@@ -14,6 +14,7 @@ import {
   getFormSessionMessages,
 } from "@/db/storage";
 import { ExtendedMessage } from "@/db/schema";
+import { google } from "@ai-sdk/google";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -46,7 +47,7 @@ export async function sendMessage(
   const formSettings = await getForm(formId);
 
   const result = await generateObject({
-    model: openai("gpt-4o-mini"),
+    model: google("gemini-2.0-flash-001"),
     schemaName: "form-assistant-response",
     schemaDescription: "Schema for form assistant response",
     schema: formAssistantResponseSchema,

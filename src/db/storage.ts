@@ -10,7 +10,7 @@ import {
 import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
 import { Message } from "@ai-sdk/react";
-import { FormResponse } from "@/actions/form-manager";
+import { FormResponse } from "@/actions/form-builder";
 import { FormAssistantResponse } from "@/actions/form-assistant";
 
 export const createForm = async (newForm: FormSettingsInsert) => {

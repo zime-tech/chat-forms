@@ -88,20 +88,20 @@ export default function FormSettingsSummary({
             </div>
           </div>
 
-          {/* Journey Row */}
+          {/* Key Information Row */}
           <div className="flex items-start bg-white/5 hover:bg-white/10 transition-all rounded-md p-2 group">
             <Award
               size={12}
               className="text-indigo-400 mr-1.5 mt-0.5 shrink-0 group-hover:text-indigo-300 transition-colors"
             />
             <div className="flex flex-wrap gap-1.5 flex-1">
-              {formSettings.journey.map((step: string, i: number) => (
+              {formSettings.keyInformation.map((step: string, i: number) => (
                 <span
                   key={i}
                   className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-white/90 text-xs flex items-center"
                 >
                   {step}
-                  {i < formSettings.journey.length - 1 && (
+                  {i < formSettings.keyInformation.length - 1 && (
                     <CornerDownRight
                       size={8}
                       className="ml-1 text-indigo-400"

@@ -2,7 +2,7 @@ import { pgTable, text, timestamp, json, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { Message } from "@ai-sdk/react";
 import { GenerateObjectResult } from "ai";
-import { FormResponse } from "@/actions/form-manager";
+import { FormResponse } from "@/actions/form-builder";
 import { FormAssistantResponse } from "@/actions/form-assistant";
 
 export type ExtendedMessage = Message & {
@@ -15,7 +15,7 @@ export const forms = pgTable("forms", {
   title: text("title").notNull(),
   tone: text("tone"),
   persona: text("persona"),
-  journey: text("journey").array(),
+  keyInformation: text("key_information").array(),
   targetAudience: text("target_audience"),
   expectedCompletionTime: text("expected_completion_time"),
   aboutBusiness: text("about_business"),

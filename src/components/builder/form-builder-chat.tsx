@@ -1,6 +1,6 @@
 "use client";
 
-import { FormResponse, sendMessage } from "@/actions/form-manager";
+import { FormResponse, sendMessage } from "@/actions/form-builder";
 import { useChat } from "@/hooks/use-chat";
 import { useState, useEffect } from "react";
 import { Message } from "@ai-sdk/react";

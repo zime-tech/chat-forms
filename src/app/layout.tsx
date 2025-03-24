@@ -25,11 +25,7 @@ export default async function RootLayout({
       <body className={inter.className}>
         <SessionProvider session={session}>
           <Navigation />
-          <div>
-            {" "}
-            {/* Add padding to account for the fixed nav */}
-            <main>{children}</main>
-          </div>
+          {children}
         </SessionProvider>
       </body>
     </html>

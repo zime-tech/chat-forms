@@ -210,13 +210,13 @@ export default function FormAssistantClient({
       `}</style>
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 p-6 backdrop-blur-md bg-black/30 border-b border-white/10 flex items-center z-10">
+      <header className="fixed top-0 left-0 right-0 p-6 py-4 backdrop-blur-md bg-black/30 border-b border-white/10 flex items-center z-10">
         <div className="flex items-center space-x-3">
           <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
             <MessageSquare size={18} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-            Form Builder
+          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+            Chat Forms
           </h1>
         </div>
       </header>

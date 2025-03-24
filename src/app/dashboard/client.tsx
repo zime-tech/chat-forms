@@ -25,6 +25,36 @@ export default function DashboardClientPage({
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [clickedButtons, setClickedButtons] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  const handleButtonClick = (formId: string, buttonType: string) => {
+    // Set the button as clicked
+    setClickedButtons({
+      ...clickedButtons,
+      [`${formId}-${buttonType}`]: true,
+    });
+
+    // Reset after animation completes
+    setTimeout(() => {
+      setClickedButtons({
+        ...clickedButtons,
+        [`${formId}-${buttonType}`]: false,
+      });
+    }, 300);
+
+    // Perform the actual action
+    if (buttonType === "message") {
+      router.push(`/forms/id=${formId}`);
+    } else if (buttonType === "copy") {
+      navigator.clipboard.writeText(
+        `${window.location.origin}/forms/${formId}`
+      );
+    } else if (buttonType === "edit") {
+      router.push(`/dashboard/${formId}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
@@ -87,72 +117,92 @@ export default function DashboardClientPage({
                 className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:bg-white/10 transition-all hover:shadow-lg hover:shadow-purple-500/5 group"
               >
                 <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold line-clamp-1 flex-1">
-                      {form.title}
-                    </h3>
-                    <div className="flex items-center text-white/40 text-xs">
-                      <Clock size={12} className="mr-1" />
-                      {form.createdAt &&
-                        formatDistanceToNow(new Date(form.createdAt), {
-                          addSuffix: true,
-                        })}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <MessageCircle size={12} className="text-blue-400" />
+                  <Link href={`/forms/${form.id}`}>
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-lg font-semibold line-clamp-1 flex-1">
+                        {form.title}
+                      </h3>
+                      <div className="flex items-center text-white/40 text-xs">
+                        <Clock size={12} className="mr-1" />
+                        {form.createdAt &&
+                          formatDistanceToNow(new Date(form.createdAt), {
+                            addSuffix: true,
+                          })}
                       </div>
-                      <span className="text-white/70 text-sm">{form.tone}</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <User size={12} className="text-green-400" />
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
+                          <MessageCircle size={12} className="text-blue-400" />
+                        </div>
+                        <span className="text-white/70 text-sm">
+                          {form.tone}
+                        </span>
                       </div>
-                      <span className="text-white/70 text-sm line-clamp-1">
-                        {form.persona}
-                      </span>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
-                        <Clock size={12} className="text-amber-400" />
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                          <User size={12} className="text-green-400" />
+                        </div>
+                        <span className="text-white/70 text-sm line-clamp-1">
+                          {form.persona}
+                        </span>
                       </div>
-                      <span className="text-white/70 text-sm">
-                        {form.expectedCompletionTime}
-                      </span>
-                    </div>
-                  </div>
 
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
+                          <Clock size={12} className="text-amber-400" />
+                        </div>
+                        <span className="text-white/70 text-sm">
+                          {form.expectedCompletionTime}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
                   <div className="border-t border-white/10 pt-4 flex items-center justify-between">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => router.push(`/form?id=${form.id}`)}
+                        onClick={() => handleButtonClick(form.id, "message")}
                         className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
                       >
-                        <MessageSquare size={16} className="text-purple-400" />
+                        <MessageSquare
+                          size={16}
+                          className={`text-purple-400 transition-transform duration-300 ${
+                            clickedButtons[`${form.id}-message`]
+                              ? "scale-150 opacity-70"
+                              : ""
+                          }`}
+                        />
                       </button>
 
                       <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            `${window.location.origin}/form?id=${form.id}`
-                          );
-                        }}
+                        onClick={() => handleButtonClick(form.id, "copy")}
                         className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
                       >
-                        <Copy size={16} className="text-blue-400" />
+                        <Copy
+                          size={16}
+                          className={`text-blue-400 transition-all duration-300 ${
+                            clickedButtons[`${form.id}-copy`]
+                              ? "translate-x-1 -translate-y-1 opacity-70"
+                              : ""
+                          }`}
+                        />
                       </button>
                     </div>
 
                     <button
-                      onClick={() => router.push(`/dashboard?edit=${form.id}`)}
+                      onClick={() => handleButtonClick(form.id, "edit")}
                       className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
                     >
-                      <Pencil size={16} className="text-amber-400" />
+                      <Pencil
+                        size={16}
+                        className={`text-amber-400 transition-all duration-300 ${
+                          clickedButtons[`${form.id}-edit`]
+                            ? "rotate-45 opacity-70"
+                            : ""
+                        }`}
+                      />
                     </button>
                   </div>
                 </div>

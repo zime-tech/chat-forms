@@ -1,6 +1,6 @@
 import FormAssistantClient from "@/components/form-assistant-client";
-import { createFormSession } from "@/db/storage";
-import { v4 as uuidv4 } from "uuid";
+import { createFormSession, getForm } from "@/db/storage";
+import { FormSettings } from "@/components/builder/types";
 
 export default async function FormPage({
   params,
@@ -14,5 +14,13 @@ export default async function FormPage({
     messageHistory: [],
   });
 
-  return <FormAssistantClient sessionId={session.id} formId={id} />;
+  const formSettings = await getForm(id);
+
+  return (
+    <FormAssistantClient
+      sessionId={session.id}
+      formId={id}
+      formSettings={formSettings as FormSettings}
+    />
+  );
 }

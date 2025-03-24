@@ -132,7 +132,7 @@ export default function FormSettingsPanel({
                 Basic Information
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-300 flex items-center">
                     <Type
@@ -181,7 +181,7 @@ export default function FormSettingsPanel({
                 Content & Tone
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-300 flex items-center">
                     <MessageCircle
@@ -350,13 +350,13 @@ export default function FormSettingsPanel({
                 </div>
 
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                  {settings.journey.length === 0 ? (
+                  {settings.journey?.length === 0 ? (
                     <div className="text-gray-400 italic text-sm py-2">
                       No journey steps added yet. Add steps to guide users
                       through your form.
                     </div>
                   ) : (
-                    settings.journey.map((step, index) => (
+                    settings.journey?.map((step, index) => (
                       <div
                         key={index}
                         className="flex items-center gap-2 bg-gray-800/50 border border-gray-700/50 rounded-md overflow-hidden group"

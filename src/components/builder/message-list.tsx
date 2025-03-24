@@ -8,14 +8,14 @@ interface MessageListProps {
   messages: ExtendedMessage[];
   lastFormUpdateMessageId: string | null;
   formSettings: any | null;
-  setShowPreview: (show: boolean) => void;
+  onDetailedView: () => void;
 }
 
 export default function MessageList({
   messages,
   lastFormUpdateMessageId,
   formSettings,
-  setShowPreview,
+  onDetailedView,
 }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +33,7 @@ export default function MessageList({
             message={message}
             isLastFormUpdate={message.id === lastFormUpdateMessageId}
             formSettings={formSettings}
-            setShowPreview={setShowPreview}
+            onDetailedView={onDetailedView}
           />
         ))}
         <div ref={messagesEndRef} />

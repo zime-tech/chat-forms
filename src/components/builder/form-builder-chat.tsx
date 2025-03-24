@@ -19,6 +19,7 @@ interface FormBuilderClientProps {
   formSettingsUpdated?: boolean;
   setFormSettingsUpdated?: (updated: boolean) => void;
   onMessagesUpdate?: (messages: Message[]) => void;
+  onDetailedView?: () => void;
 }
 
 export default function FormBuilderChat({
@@ -29,6 +30,7 @@ export default function FormBuilderChat({
   formSettingsUpdated: externalFormSettingsUpdated,
   setFormSettingsUpdated: externalSetFormSettingsUpdated,
   onMessagesUpdate,
+  onDetailedView = () => {},
 }: FormBuilderClientProps) {
   const { messages, isLoading, handleSubmit } = useChat<FormResponse>({
     sendMessage: async (formId, message) => {
@@ -138,7 +140,7 @@ export default function FormBuilderChat({
           messages={messages as ExtendedMessage[]}
           lastFormUpdateMessageId={lastFormUpdateMessageId}
           formSettings={formSettings}
-          setShowPreview={setShowPreview}
+          onDetailedView={onDetailedView}
         />
 
         {/* Input Form */}

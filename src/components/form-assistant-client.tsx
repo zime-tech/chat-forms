@@ -18,40 +18,20 @@ import {
 import { Message } from "@ai-sdk/react";
 import { ExtendedMessage } from "@/db/schema";
 
-const sampleSettings: FormSettings = {
-  title: "Chatoura User Feedback",
-  tone: "friendly",
-  persona: "Engaging Chatoura Support",
-  journey: [
-    "Welcome users and explain the purpose of the feedback",
-    "Ask about their overall experience with Chatoura",
-    "Inquire about specific features they liked or disliked",
-    "Request suggestions for improvements",
-  ],
-  targetAudience: "Early users of the Chatoura platform",
-  expectedCompletionTime: "5-10 minutes",
-  aboutBusiness:
-    "Chatoura is a chatbot creation platform that allows users to create AI chatbots and connect them to their websites or Facebook pages.",
-  welcomeMessage:
-    "Hi there! We appreciate your feedback on Chatoura. Your insights will help us improve our platform.",
-  callToAction: "Start Form",
-  endScreenMessage:
-    "Thank you for taking the time to share your thoughts. Your feedback is invaluable to us.",
-};
-
 interface FormAssistantClientProps {
   sessionId: string;
   formId: string;
+  formSettings: FormSettings;
 }
 
 export default function FormAssistantClient({
   sessionId,
   formId,
+  formSettings,
 }: FormAssistantClientProps) {
   const [started, setStarted] = useState(false);
   const [isFormCompleted, setIsFormCompleted] = useState(false);
   const [allMessages, setAllMessages] = useState<ExtendedMessage[]>([]);
-
   const { messages, isLoading, handleSubmit } = useChat<FormAssistantResponse>({
     sendMessage: async (
       formId: string,
@@ -88,7 +68,7 @@ export default function FormAssistantClient({
       {
         id: "initial-message",
         role: "assistant",
-        content: sampleSettings.welcomeMessage,
+        content: formSettings.welcomeMessage,
       },
     ],
   });
@@ -172,18 +152,18 @@ export default function FormAssistantClient({
     setUserMessage("start_form");
     setInputValue("start_form");
 
-    // Use setTimeout to ensure state is updated before submitting the form
-    setTimeout(() => {
-      // Find the form element and dispatch a submit event
-      const form = document.querySelector("form");
-      if (form) {
-        const submitEvent = new Event("submit", {
-          bubbles: true,
-          cancelable: true,
-        });
-        form.dispatchEvent(submitEvent);
-      }
-    }, 10);
+    // Directly call the function that handles submission logic without an event
+    const fakeEvent = {
+      preventDefault: () => {},
+      target: {
+        elements: {
+          0: {
+            value: "start_form",
+          },
+        },
+      },
+    } as unknown as React.FormEvent<HTMLFormElement>;
+    handleSubmit(fakeEvent);
   };
 
   // Clear input after receiving response
@@ -196,12 +176,6 @@ export default function FormAssistantClient({
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-900 to-black text-white overflow-hidden">
-      {/* Background gradient effects */}
-      <div className="absolute top-0 left-0 w-full h-40 bg-purple-600/10 blur-[100px] rounded-full animate-pulse"></div>
-      <div className="absolute top-10 right-10 w-40 h-40 bg-blue-500/10 blur-[80px] rounded-full animate-pulse delay-150"></div>
-      <div className="absolute top-60 left-20 w-60 h-60 bg-indigo-600/5 blur-[100px] rounded-full animate-pulse delay-300"></div>
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-fuchsia-500/5 blur-[100px] rounded-full"></div>
-
       {/* Custom animations */}
       <style jsx global>{`
         @keyframes fadeInUp {
@@ -248,12 +222,17 @@ export default function FormAssistantClient({
       </header>
 
       {/* Main Content - Centered */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
+        {/* Background gradient effects */}
+        <div className="absolute top-0 left-0 w-full h-40 bg-purple-600/10 blur-[100px] rounded-full animate-pulse"></div>
+        <div className="absolute top-10 right-10 w-40 h-40 bg-blue-500/10 blur-[80px] rounded-full animate-pulse delay-150"></div>
+        <div className="absolute top-60 left-20 w-60 h-60 bg-indigo-600/5 blur-[100px] rounded-full animate-pulse delay-300"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-fuchsia-500/5 blur-[100px] rounded-full"></div>
         <div className="w-full max-w-2xl mx-auto space-y-8">
           {/* Form Title */}
           <div className="text-center opacity-75 fade-in-up">
             <h2 className="text-sm font-medium text-white/50 uppercase tracking-wider">
-              {sampleSettings.title}
+              {formSettings.title}
             </h2>
             <div className="mt-1 w-16 h-0.5 bg-gradient-to-r from-purple-500/40 to-blue-500/40 mx-auto rounded-full"></div>
           </div>
@@ -307,7 +286,7 @@ export default function FormAssistantClient({
                   onClick={handleStartClick}
                   className="px-8 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium text-lg flex items-center gap-2 hover:shadow-lg hover:shadow-purple-500/20 transition-all transform hover:scale-105 group"
                 >
-                  {sampleSettings.callToAction}
+                  {formSettings.callToAction}
                   <ArrowRight
                     size={18}
                     className="group-hover:translate-x-1 transition-transform"
@@ -323,10 +302,10 @@ export default function FormAssistantClient({
                     </div>
                   </div>
                   <p className="text-white/90 text-lg mb-4">
-                    {sampleSettings.endScreenMessage}
+                    {formSettings.endScreenMessage}
                   </p>
                   <p className="text-white/70 text-sm">
-                    Form completed: {sampleSettings.expectedCompletionTime}
+                    Form completed: {formSettings.expectedCompletionTime}
                   </p>
                 </div>
               </div>

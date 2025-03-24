@@ -8,14 +8,14 @@ interface MessageItemProps {
   message: ExtendedMessage;
   isLastFormUpdate: boolean;
   formSettings: any | null;
-  setShowPreview: (show: boolean) => void;
+  onDetailedView: () => void;
 }
 
 export default function MessageItem({
   message,
   isLastFormUpdate,
   formSettings,
-  setShowPreview,
+  onDetailedView,
 }: MessageItemProps) {
   const isUser = message.role === "user";
 
@@ -51,7 +51,7 @@ export default function MessageItem({
         {!isUser && isLastFormUpdate && formSettings && (
           <FormSettingsSummary
             formSettings={formSettings}
-            setShowPreview={setShowPreview}
+            onDetailedView={onDetailedView}
           />
         )}
       </div>

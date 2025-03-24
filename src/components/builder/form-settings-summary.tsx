@@ -19,12 +19,12 @@ import { FormSettings } from "./types";
 
 interface FormSettingsSummaryProps {
   formSettings: FormSettings;
-  setShowPreview: (show: boolean) => void;
+  onDetailedView: () => void;
 }
 
 export default function FormSettingsSummary({
   formSettings,
-  setShowPreview,
+  onDetailedView,
 }: FormSettingsSummaryProps) {
   return (
     <div className="mt-4 p-3 rounded-lg bg-gradient-to-br from-white/5 to-purple-500/5 border border-white/10 backdrop-blur-sm animate-fadeIn relative overflow-hidden">
@@ -37,7 +37,7 @@ export default function FormSettingsSummary({
             FORM SETTINGS UPDATED
           </div>
           <button
-            onClick={() => setShowPreview(true)}
+            onClick={onDetailedView}
             className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-white/60 hover:text-white transition-colors bg-white/5 hover:bg-white/10 border border-white/5"
           >
             <span>Detailed View</span>

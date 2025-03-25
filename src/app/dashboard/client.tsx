@@ -48,7 +48,7 @@ export default function DashboardClientPage({
 
     // Perform the actual action
     if (buttonType === "message") {
-      router.push(`/forms/id=${formId}`);
+      router.push(`/forms${formId}`);
     } else if (buttonType === "copy") {
       navigator.clipboard.writeText(
         `${window.location.origin}/forms/${formId}`

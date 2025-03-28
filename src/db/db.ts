@@ -16,28 +16,57 @@ export const pool = new Pool({
 });
 
 // Database health check function
-export async function checkDbHealth() {
-  try {
-    // Simple query to test connectivity
-    const result = await pool.query("SELECT 1 as health_check");
-    console.log("Database health check passed", {
-      status: "healthy",
-      connected: true,
-      timestamp: new Date().toISOString(),
-      message: "Database connection is healthy",
-      details: {
-        poolSize: pool.totalCount,
-        idleConnections: pool.idleCount,
-        waitingClients: pool.waitingCount,
-      },
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Database health check failed", {
-      error: errorMessage,
-      timestamp: new Date().toISOString(),
-    });
-    throw new Error("Database connection failed " + errorMessage);
+export async function checkDbHealth(maxRetries = 3, retryDelay = 100) {
+  let retries = 0;
+  let lastError: unknown;
+
+  while (retries <= maxRetries) {
+    try {
+      // Simple query to test connectivity
+      const result = await pool.query("SELECT 1 as health_check");
+      console.log("Database health check passed", {
+        status: "healthy",
+        connected: true,
+        timestamp: new Date().toISOString(),
+        message: "Database connection is healthy",
+        details: {
+          poolSize: pool.totalCount,
+          idleConnections: pool.idleCount,
+          waitingClients: pool.waitingCount,
+        },
+        retryAttempts: retries,
+      });
+      return; // Success, exit the function
+    } catch (error) {
+      lastError = error;
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.warn(
+        `Database health check failed (attempt ${retries + 1}/${
+          maxRetries + 1
+        })`,
+        {
+          error: errorMessage,
+          timestamp: new Date().toISOString(),
+        }
+      );
+
+      if (retries < maxRetries) {
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        retries++;
+      } else {
+        // All retries exhausted
+        console.error("Database health check failed after all retry attempts", {
+          error: errorMessage,
+          timestamp: new Date().toISOString(),
+          totalAttempts: maxRetries + 1,
+        });
+        throw new Error(
+          "Database connection failed after multiple attempts: " + errorMessage
+        );
+      }
+    }
   }
 }
 

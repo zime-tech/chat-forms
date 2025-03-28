@@ -9,9 +9,9 @@ import {
 } from "@/db/schema";
 import { db } from "@/db/db";
 import { eq } from "drizzle-orm";
-import { Message } from "@ai-sdk/react";
-import { FormResponse } from "@/actions/form-builder";
 import { FormAssistantResponse } from "@/actions/form-assistant";
+
+const MAX_FORMS_PER_USER = 10;
 
 export const createForm = async (newForm: FormSettingsInsert) => {
   if (!db) {
@@ -19,6 +19,12 @@ export const createForm = async (newForm: FormSettingsInsert) => {
   }
   if (!newForm.userId) {
     throw new Error("User ID is required");
+  }
+
+  // validate that the user didn't exceed the max number of forms
+  const userForms = await getUserForms(newForm.userId);
+  if (userForms.length >= MAX_FORMS_PER_USER) {
+    throw new Error("You have reached the maximum number of forms");
   }
 
   const form = await db.insert(forms).values(newForm).returning();

@@ -70,7 +70,9 @@ export const getFormMessages = async (id: string) => {
 
   const [form] = await db.select().from(forms).where(eq(forms.id, id));
 
-  return form?.messageHistory || [];
+  const messages = form?.messageHistory || [];
+
+  return messages.slice(-20);
 };
 
 export const addFormMessages = async (
@@ -138,6 +140,29 @@ export const addFormSessionMessages = async (
   const formSession = await db
     .update(formSessions)
     .set({ messageHistory: updatedMessages })
+    .where(eq(formSessions.id, id));
+  return formSession;
+};
+
+export const addFormSessionSummary = async (
+  id: string,
+  summary: FormAssistantResponse["summary"]
+) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  if (!summary) {
+    throw new Error("Summary is required");
+  }
+
+  const formSession = await db
+    .update(formSessions)
+    .set({
+      detailedSummary: summary.detailedSummary,
+      quickSummary: summary.quickSummary,
+      overallSentiment: summary.overallSentiment,
+    })
     .where(eq(formSessions.id, id));
   return formSession;
 };

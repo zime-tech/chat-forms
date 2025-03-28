@@ -38,6 +38,9 @@ export const forms = pgTable("forms", {
 export const formSessions = pgTable("form_sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
   formId: uuid("form_id").references(() => forms.id),
+  quickSummary: text("quick_summary"),
+  detailedSummary: text("detailed_summary"),
+  overallSentiment: text("overall_sentiment"),
   messageHistory: json("message_history").$type<ExtendedMessage[]>(),
   createdAt: timestamp("created_at").defaultNow(),
 });

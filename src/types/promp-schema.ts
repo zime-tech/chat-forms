@@ -23,4 +23,11 @@ export const formResponseSchema = z.object({
 export const formAssistantResponseSchema = z.object({
   responseToUser: z.string(),
   formCompleted: z.boolean(),
+  summary: z
+    .object({
+      quickSummary: z.string(),
+      detailedSummary: z.string(),
+      overallSentiment: z.string(),
+    })
+    .optional(),
 });

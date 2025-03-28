@@ -5,7 +5,6 @@ import { useChat } from "@/hooks/use-chat";
 import { useState, useEffect } from "react";
 import { Message } from "@ai-sdk/react";
 import { ExtendedMessage, FormSettings } from "./types";
-import Header from "./header";
 import MessageList from "./message-list";
 import InputForm from "./input-form";
 import FormSettingsDetail from "./form-settings-detail";

@@ -304,9 +304,6 @@ export default function FormAssistantClient({
                   <p className="text-white/90 text-lg mb-4">
                     {formSettings.endScreenMessage}
                   </p>
-                  <p className="text-white/70 text-sm">
-                    Form completed: {formSettings.expectedCompletionTime}
-                  </p>
                 </div>
               </div>
             ) : (

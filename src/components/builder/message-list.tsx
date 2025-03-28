@@ -25,7 +25,7 @@ export default function MessageList({
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+    <div className="flex-1 z-10 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
       <div className="max-w-3xl mx-auto space-y-6">
         {messages.map((message, index) => (
           <MessageItem

@@ -1,7 +1,6 @@
 "use server";
 
 import { openai } from "@ai-sdk/openai";
-import { google } from "@ai-sdk/google";
 import { generateObject, Message } from "ai";
 import { z } from "zod";
 import { formResponseSchema } from "@/types/promp-schema";
@@ -18,7 +17,7 @@ export async function sendMessage(formId: string, message: Message) {
   await addFormMessages(formId, newMessages);
 
   const result = await generateObject({
-    model: google("gemini-2.0-flash-001"),
+    model: openai("gpt-4o-mini"),
     schemaName: "form-settings-response",
     schemaDescription:
       "Schema for form settings including fields configuration",

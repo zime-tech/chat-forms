@@ -10,11 +10,11 @@ import {
 import { formAssistantSystemPrompt } from "@/system-prompts/assistant";
 import {
   addFormSessionMessages,
+  addFormSessionSummary,
   getForm,
   getFormSessionMessages,
 } from "@/db/storage";
 import { ExtendedMessage } from "@/db/schema";
-import { google } from "@ai-sdk/google";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -22,13 +22,21 @@ export type FormSettings = z.infer<typeof formSettingsSchema>;
 
 const formatMessageContent = (
   message: Message,
-  settings: FormSettings
+  settings: FormSettings,
+  isLastMessage: boolean
 ): string => {
   if (message.role === "user") {
-    return `
+    const content = `
     User Message: ${message.content}
-    Form Settings: ${JSON.stringify(settings)}
     `;
+    if (isLastMessage) {
+      return `
+      ${content}
+      Form Settings: ${JSON.stringify(settings)}
+      `;
+    } else {
+      return content;
+    }
   }
 
   return message.content;
@@ -44,21 +52,36 @@ export async function sendMessage(
 
   await addFormSessionMessages(sessionId, [message]);
 
-  const formSettings = await getForm(formId);
+  const form = await getForm(formId);
+  const formSettings: FormSettings = {
+    title: form.title,
+    tone: form.tone || "",
+    persona: form.persona || "",
+    keyInformation: form.keyInformation || [],
+    targetAudience: form.targetAudience || "",
+    expectedCompletionTime: form.expectedCompletionTime || "",
+    aboutBusiness: form.aboutBusiness || "",
+    welcomeMessage: form.welcomeMessage || "",
+    callToAction: form.callToAction || "",
+    endScreenMessage: form.endScreenMessage || "",
+  };
+
+  const formattedMessages = newMessages.map((msg, index) => ({
+    id: msg.id,
+    role: msg.role,
+    content: formatMessageContent(
+      msg,
+      formSettings as unknown as FormSettings,
+      index === newMessages.length - 1
+    ),
+  }));
 
   const result = await generateObject({
-    model: google("gemini-2.0-flash-001"),
+    model: openai("gpt-4o-mini"),
     schemaName: "form-assistant-response",
     schemaDescription: "Schema for form assistant response",
     schema: formAssistantResponseSchema,
-    messages: newMessages.map((msg) => ({
-      id: msg.id,
-      role: msg.role,
-      content: formatMessageContent(
-        msg,
-        formSettings as unknown as FormSettings
-      ),
-    })),
+    messages: formattedMessages,
     system: formAssistantSystemPrompt,
   });
 
@@ -73,9 +96,18 @@ export async function sendMessage(
     responseData: result.object as FormAssistantResponse,
   };
 
-  await addFormSessionMessages(sessionId, [assistantMessage]);
-
   newMessages.push(assistantMessage);
+
+  // save the summary
+  let saveSummary = false;
+  if (result.object.formCompleted && result.object.summary) {
+    saveSummary = true;
+  }
+
+  await Promise.all([
+    addFormSessionMessages(sessionId, [assistantMessage]),
+    saveSummary && addFormSessionSummary(sessionId, result.object.summary),
+  ]);
 
   return newMessages;
 }

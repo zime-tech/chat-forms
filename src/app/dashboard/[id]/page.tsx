@@ -19,12 +19,22 @@ export default async function FormBuilderPage({
 
   let formId = id;
   if (id === "new") {
-    const [newForm] = await createForm({
-      title: "New Form",
-      userId: session?.user?.id as string,
-    });
-    formId = newForm.id;
-    return redirect(`/dashboard/${formId}`);
+    let newFormId = "";
+    try {
+      const [newForm] = await createForm({
+        title: "New Form",
+        userId: session?.user?.id as string,
+      });
+      newFormId = newForm.id;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (newFormId && newFormId !== "") {
+        redirect(`/dashboard/${newFormId}`);
+      } else {
+        redirect("/dashboard");
+      }
+    }
   }
 
   // validate form belongs to user

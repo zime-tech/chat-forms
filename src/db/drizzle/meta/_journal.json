@@ -43,6 +43,13 @@
       "when": 1742818741335,
       "tag": "0005_sour_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1743176284537,
+      "tag": "0006_past_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

@@ -4,11 +4,12 @@ import {
   FormSessionsInsert,
   FormSettings,
   FormSettingsInsert,
+  formCreationLogs,
   formSessions,
   forms,
 } from "@/db/schema";
 import { db } from "@/db/db";
-import { eq } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { FormAssistantResponse } from "@/actions/form-assistant";
 
 const MAX_FORMS_PER_USER = 10;
@@ -21,13 +22,50 @@ export const createForm = async (newForm: FormSettingsInsert) => {
     throw new Error("User ID is required");
   }
 
-  // validate that the user didn't exceed the max number of forms
-  const userForms = await getUserForms(newForm.userId);
-  if (userForms.length >= MAX_FORMS_PER_USER) {
+  // validate that the user didn't exceed the max number of forms today
+  // check from the formCreationLogs table
+  const today = new Date();
+  const startOfDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    0,
+    0,
+    0
+  );
+  const endOfDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
+
+  const logs = await db
+    .select()
+    .from(formCreationLogs)
+    .where(
+      and(
+        eq(formCreationLogs.userId, newForm.userId),
+        and(
+          gte(formCreationLogs.createdAt, startOfDay),
+          lte(formCreationLogs.createdAt, endOfDay)
+        )
+      )
+    );
+
+  if (logs.length >= MAX_FORMS_PER_USER) {
     throw new Error("You have reached the maximum number of forms");
   }
-
   const form = await db.insert(forms).values(newForm).returning();
+
+  await db.insert(formCreationLogs).values({
+    userId: newForm.userId,
+    formId: form[0].id,
+  });
+
   return form;
 };
 

@@ -45,6 +45,13 @@ export const formSessions = pgTable("form_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const formCreationLogs = pgTable("form_creation_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id),
+  formId: uuid("form_id"), // no relation to keep logs persistent
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Authentication tables
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -104,11 +111,13 @@ export const verificationTokens = pgTable(
 export const formSettingsInsertSchema = createInsertSchema(forms);
 export const formSessionsInsertSchema = createInsertSchema(formSessions);
 export const userInsertSchema = createInsertSchema(users);
+export const formCreationLogInsertSchema = createInsertSchema(formCreationLogs);
 
 // select schemas
 export const formSettingsSelectSchema = createSelectSchema(forms);
 export const formSessionsSelectSchema = createSelectSchema(formSessions);
 export const userSelectSchema = createSelectSchema(users);
+export const formCreationLogSelectSchema = createSelectSchema(formCreationLogs);
 
 // types
 export type FormSettings = typeof forms.$inferSelect;
@@ -125,3 +134,6 @@ export type AccountInsert = typeof accounts.$inferInsert;
 
 export type Session = typeof sessions.$inferSelect;
 export type SessionInsert = typeof sessions.$inferInsert;
+
+export type FormCreationLog = typeof formCreationLogs.$inferSelect;
+export type FormCreationLogInsert = typeof formCreationLogs.$inferInsert;

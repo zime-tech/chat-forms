@@ -5,6 +5,7 @@ import Navigation from "@/components/nav";
 import { SessionProvider } from "@/components/session-provider";
 import { getServerSession } from "next-auth";
 import { authOptions } from "auth";
+import { analytics } from "@/lib/firebase";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getServerSession(authOptions);
+
+  // initialize analytics
+  analytics;
 
   return (
     <html lang="en">

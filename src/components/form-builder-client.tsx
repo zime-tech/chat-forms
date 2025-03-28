@@ -1,8 +1,8 @@
 "use client";
 
 import { Message } from "@ai-sdk/react";
-import { useState, useEffect } from "react";
-import { MessageCircle, Settings } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { BarChart, MessageCircle, Settings } from "lucide-react";
 import FormBuilderChat from "./builder/form-builder-chat";
 import Header from "./builder/header";
 import { useFormSettings } from "@/hooks/use-form-settings";
@@ -11,6 +11,7 @@ import { FormSettings } from "./builder/types";
 import { Toaster } from "sonner";
 import FormAssistantClient from "./form-assistant-client";
 import { createFormSession } from "@/db/storage";
+import FormResultsPanel from "./results/form-results-panel";
 
 interface FormBuilderProps {
   formId: string;
@@ -21,7 +22,9 @@ export default function FormBuilder({
   formId,
   initialMessages,
 }: FormBuilderProps) {
-  const [activeTab, setActiveTab] = useState<"chat" | "settings">("chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "settings" | "results">(
+    "chat"
+  );
   const [messages, setMessages] = useState<Message[]>(
     initialMessages || [
       {
@@ -104,6 +107,24 @@ export default function FormBuilder({
     }
   };
 
+  const getLeftSideWidth = useCallback(() => {
+    if (activeTab === "results") {
+      return "w-[60%]";
+    }
+    return "w-[40%]";
+  }, [activeTab]);
+
+  const getRightSideWidth = useCallback(() => {
+    if (activeTab === "results") {
+      return "w-[40%]";
+    }
+    return "w-[60%]";
+  }, [activeTab]);
+
+  // Determine layout widths based on active tab
+  const leftSideWidth = getLeftSideWidth();
+  const rightSideWidth = getRightSideWidth();
+
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Toast notifications */}
@@ -118,10 +139,12 @@ export default function FormBuilder({
         copied={copied}
       />
 
-      {/* Main Split Layout: 40-60 */}
+      {/* Main Split Layout: Dynamic based on active tab */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Side - 40% - Existing Content */}
-        <div className="w-[40%] flex flex-col border-r border-white/10 overflow-hidden">
+        {/* Left Side - Dynamic width */}
+        <div
+          className={`${leftSideWidth} flex flex-col border-r border-white/10 overflow-hidden transition-all duration-300`}
+        >
           {/* Tab Navigation */}
           <div className="flex border-b border-white/10 bg-gray-900 shrink-0">
             <button
@@ -145,7 +168,18 @@ export default function FormBuilder({
               disabled={!formSettings}
             >
               <Settings size={16} />
-              Settings{!formSettings}
+              Settings
+            </button>
+            <button
+              onClick={() => setActiveTab("results")}
+              className={`px-4 py-3 flex items-center gap-2 text-sm font-medium transition-colors ${
+                activeTab === "results"
+                  ? "text-white border-b-2 border-purple-500"
+                  : "text-white/60 hover:text-white/80"
+              }`}
+            >
+              <BarChart size={16} />
+              Results
             </button>
           </div>
 
@@ -188,11 +222,21 @@ export default function FormBuilder({
                 </div>
               )}
             </div>
+
+            <div
+              className={`absolute inset-0 ${
+                activeTab === "results" ? "z-10 visible" : "z-0 invisible"
+              }`}
+            >
+              <FormResultsPanel formId={formId} />
+            </div>
           </div>
         </div>
 
-        {/* Right Side - 60% - Currently Empty */}
-        <div className="w-[60%] overflow-hidden relative">
+        {/* Right Side - Dynamic width */}
+        <div
+          className={`${rightSideWidth} overflow-hidden relative transition-all duration-300`}
+        >
           {formAssistantSessionId && formSettings && (
             <div className="absolute top-6 right-6 z-20">
               <button

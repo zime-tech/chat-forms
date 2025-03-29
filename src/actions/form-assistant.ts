@@ -15,6 +15,7 @@ import {
   getFormSessionMessages,
 } from "@/db/storage";
 import { ExtendedMessage } from "@/db/schema";
+import { trackEvent } from "@/lib/jitsu-server";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -107,6 +108,10 @@ export async function sendMessage(
   await Promise.all([
     addFormSessionMessages(sessionId, [assistantMessage]),
     saveSummary && addFormSessionSummary(sessionId, result.object.summary),
+    trackEvent("form-assistant-message", {
+      formId,
+      sessionId,
+    }),
   ]);
 
   return newMessages;

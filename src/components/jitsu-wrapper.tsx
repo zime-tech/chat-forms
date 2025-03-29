@@ -28,6 +28,10 @@ function JitsuTracker() {
     if (isTrackingEnabled && session.data?.user) {
       analytics.identify(session.data.user.id, {
         email: session.data.user.email,
+        name: session.data.user.name,
+        // do not send the identify event to Jitsu
+        // to reduce unnecessary events
+        $doNotSend: true,
       });
     }
   }, [session, isTrackingEnabled]);

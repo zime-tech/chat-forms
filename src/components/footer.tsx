@@ -20,7 +20,7 @@ export default function Footer() {
 
   return (
     showFotter && (
-      <footer className="z-10 w-full border-t border-zinc-200 dark:border-zinc-800 mt-auto py-4">
+      <footer className="z-10 w-full border-t border-zinc-800 mt-auto py-4 bg-black/30">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm text-zinc-600 dark:text-zinc-400">
           <div>
             © {new Date().getFullYear()} Chat Forms. All rights reserved.

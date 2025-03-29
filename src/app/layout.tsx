@@ -6,7 +6,7 @@ import { SessionProvider } from "@/components/session-provider";
 import { getServerSession } from "next-auth";
 import { authOptions } from "auth";
 import { analytics } from "@/lib/firebase";
-
+import JitsuWrapper from "@/components/jitsu-wrapper";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -28,8 +28,10 @@ export default async function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <SessionProvider session={session}>
-          <Navigation />
-          {children}
+          <JitsuWrapper>
+            <Navigation />
+            {children}
+          </JitsuWrapper>
         </SessionProvider>
       </body>
     </html>

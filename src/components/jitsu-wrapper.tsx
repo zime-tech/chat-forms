@@ -4,6 +4,7 @@ import { JitsuProvider, useJitsu } from "@jitsu/jitsu-react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { useConsent } from "./consent-provider";
 
 /**
  * JitsuTracker is a client component that tracks the current route and user.
@@ -13,20 +14,23 @@ function JitsuTracker() {
   const pathname = usePathname();
   const { analytics } = useJitsu();
   const session = useSession();
+  const { isTrackingEnabled } = useConsent();
 
-  // track page views
+  // track page views only if consent is given
   useEffect(() => {
-    analytics.page();
-  }, [pathname]);
+    if (isTrackingEnabled) {
+      analytics.page();
+    }
+  }, [pathname, isTrackingEnabled]);
 
-  // track current user
+  // track current user only if consent is given
   useEffect(() => {
-    if (session.data?.user) {
+    if (isTrackingEnabled && session.data?.user) {
       analytics.identify(session.data.user.id, {
         email: session.data.user.email,
       });
     }
-  }, [session]);
+  }, [session, isTrackingEnabled]);
 
   return null;
 }

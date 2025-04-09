@@ -1,8 +1,13 @@
 "use server";
 
+import { openai } from "@ai-sdk/openai";
+import { generateObject, Message } from "ai";
 import { db } from "@/db/db";
 import { formSessions } from "@/db/schema";
 import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
+import { getFormMessages } from "@/db/storage";
+import { formOverallSummarySchema } from "@/types/promp-schema";
+import { getFormSummaryPrompt } from "@/system-prompts/results";
 
 // Define types for our response that will be used on the client
 export type FormSessionBasic = {
@@ -80,4 +85,27 @@ export async function getFormSessionDetails(
     console.error("Error fetching form session details:", error);
     throw new Error("Failed to fetch form session details");
   }
+}
+
+/**
+ * Get overall summary of all form sessions
+ */
+export async function getOverallSummary(formId: string) {
+  const sessions = await getFormSessions(formId);
+  const messages = await getFormMessages(formId);
+
+  const prompt = getFormSummaryPrompt(sessions, messages);
+
+  const result = await generateObject({
+    model: openai("gpt-4o-mini"),
+    messages: [
+      {
+        role: "system",
+        content: prompt,
+      },
+    ],
+    schema: formOverallSummarySchema,
+  });
+
+  return result.object;
 }

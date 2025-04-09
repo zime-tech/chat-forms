@@ -2,7 +2,7 @@
 
 import { Message } from "@ai-sdk/react";
 import { useState, useEffect, useCallback } from "react";
-import { BarChart, MessageCircle, Settings } from "lucide-react";
+import { BarChart, LineChart, MessageCircle, Settings } from "lucide-react";
 import FormBuilderChat from "./builder/form-builder-chat";
 import Header from "./builder/header";
 import { useFormSettings } from "@/hooks/use-form-settings";
@@ -12,6 +12,7 @@ import { Toaster } from "sonner";
 import FormAssistantClient from "./form-assistant-client";
 import { createFormSession } from "@/db/storage";
 import FormResultsPanel from "./results/form-results-panel";
+import FormSummaryPanel from "./results/form-summary-panel";
 
 interface FormBuilderProps {
   formId: string;
@@ -22,9 +23,9 @@ export default function FormBuilder({
   formId,
   initialMessages,
 }: FormBuilderProps) {
-  const [activeTab, setActiveTab] = useState<"chat" | "settings" | "results">(
-    "chat"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "chat" | "settings" | "results" | "overall-summary"
+  >("chat");
   const [messages, setMessages] = useState<Message[]>(
     initialMessages || [
       {
@@ -181,6 +182,17 @@ export default function FormBuilder({
               <BarChart size={16} />
               Results
             </button>
+            <button
+              onClick={() => setActiveTab("overall-summary")}
+              className={`px-4 py-3 flex items-center gap-2 text-sm font-medium transition-colors ${
+                activeTab === "overall-summary"
+                  ? "text-white border-b-2 border-purple-500"
+                  : "text-white/60 hover:text-white/80"
+              }`}
+            >
+              <LineChart size={16} />
+              Overall Summary
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -229,6 +241,16 @@ export default function FormBuilder({
               }`}
             >
               <FormResultsPanel formId={formId} />
+            </div>
+
+            <div
+              className={`absolute inset-0 ${
+                activeTab === "overall-summary"
+                  ? "z-10 visible"
+                  : "z-0 invisible"
+              }`}
+            >
+              <FormSummaryPanel formId={formId} />
             </div>
           </div>
         </div>

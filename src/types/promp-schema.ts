@@ -31,3 +31,8 @@ export const formAssistantResponseSchema = z.object({
     })
     .optional(),
 });
+
+export const formOverallSummarySchema = z.object({
+  summary: z.string(),
+  sentiment: z.string(),
+});

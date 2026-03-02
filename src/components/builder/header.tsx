@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowLeft, Link as LinkIcon, Check, Copy } from "lucide-react";
+import { ArrowLeft, Link as LinkIcon, Check, Copy, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   formId: string;
   formTitle?: string;
   createdAt?: string;
+  isClosed?: boolean;
   handleCopyLink: () => void;
   copied: boolean;
 }
@@ -15,6 +16,7 @@ export default function Header({
   formId,
   formTitle,
   createdAt,
+  isClosed,
   handleCopyLink,
   copied,
 }: HeaderProps) {
@@ -30,10 +32,16 @@ export default function Header({
         >
           <ArrowLeft size={16} />
         </button>
-        <span className="text-sm font-medium text-foreground truncate max-w-[200px] sm:max-w-none">
+        <span className="text-sm font-medium text-foreground truncate max-w-[150px] sm:max-w-none">
           {formTitle || "Form Builder"}
         </span>
-        {createdAt && (
+        {isClosed && (
+          <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+            <Lock size={9} />
+            Closed
+          </span>
+        )}
+        {!isClosed && createdAt && (
           <span className="hidden sm:inline text-xs text-muted-foreground">
             Created {new Date(createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
           </span>
@@ -61,10 +69,15 @@ export default function Header({
           href={`/forms/${formId}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground hover:opacity-90 transition-opacity"
+          title={isClosed ? "This form is currently closed" : undefined}
+          className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-opacity ${
+            isClosed
+              ? "bg-muted text-muted-foreground hover:opacity-80"
+              : "bg-accent text-accent-foreground hover:opacity-90"
+          }`}
         >
-          <LinkIcon size={12} />
-          Open form
+          {isClosed ? <Lock size={12} /> : <LinkIcon size={12} />}
+          {isClosed ? "Form closed" : "Open form"}
         </a>
       </div>
     </header>

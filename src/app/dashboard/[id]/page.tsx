@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import FormBuilderClient from "@/components/form-builder-client";
-import { getForm, getFormMessages } from "@/db/storage";
+import { getForm, getFormMessages, getFormResponseCount } from "@/db/storage";
 import { getSession } from "auth";
 import { redirect } from "next/navigation";
 import { INITIAL_BUILDER_MESSAGE } from "@/lib/constants";
@@ -40,7 +40,10 @@ export default async function FormBuilderPage({
     redirect("/dashboard");
   }
 
-  const messages = await getFormMessages(id);
+  const [messages, responseCount] = await Promise.all([
+    getFormMessages(id),
+    getFormResponseCount(id),
+  ]);
 
   if (messages.length === 0) {
     messages.push({
@@ -50,5 +53,12 @@ export default async function FormBuilderPage({
     });
   }
 
-  return <FormBuilderClient formId={id} initialMessages={messages} createdAt={form?.createdAt?.toISOString()} />;
+  return (
+    <FormBuilderClient
+      formId={id}
+      initialMessages={messages}
+      createdAt={form?.createdAt?.toISOString()}
+      responseCount={responseCount}
+    />
+  );
 }

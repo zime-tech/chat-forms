@@ -27,7 +27,7 @@ import { MAX_FORMS_PER_USER } from "@/lib/constants";
 
 const STORAGE_KEY = "dashboard_response_counts";
 
-type FormWithCount = FormSettings & { responseCount: number; lastResponseAt: Date | null };
+type FormWithCount = FormSettings & { responseCount: number; lastResponseAt: Date | string | null };
 
 export default function DashboardClientPage({
   forms,

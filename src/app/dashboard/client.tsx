@@ -15,13 +15,17 @@ import {
   ArrowUpDown,
   Files,
   Loader2,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { deleteFormAction, duplicateFormAction } from "@/actions/form-management";
+import { deleteFormAction, duplicateFormAction, toggleFormStatusAction } from "@/actions/form-management";
 import { toast } from "sonner";
 import { MAX_FORMS_PER_USER } from "@/lib/constants";
+
+const STORAGE_KEY = "dashboard_response_counts";
 
 type FormWithCount = FormSettings & { responseCount: number };
 
@@ -38,10 +42,9 @@ export default function DashboardClientPage({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "responses" | "title">("newest");
-
-  const STORAGE_KEY = "dashboard_response_counts";
 
   const getNewResponseCounts = useCallback(() => {
     try {
@@ -144,6 +147,23 @@ export default function DashboardClientPage({
     setConfirmDeleteId(null);
   };
 
+  const handleToggleStatus = async (e: React.MouseEvent, form: FormWithCount) => {
+    e.stopPropagation();
+    setTogglingId(form.id);
+    const isCurrentlyClosed =
+      form.status === "closed" ||
+      (form.closedAt != null && new Date(form.closedAt) <= new Date());
+    try {
+      await toggleFormStatusAction(form.id);
+      toast.success(isCurrentlyClosed ? "Form reopened" : "Form closed");
+      router.refresh();
+    } catch {
+      toast.error("Failed to update form status");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const handleDuplicate = async (e: React.MouseEvent, formId: string) => {
     e.stopPropagation();
     setDuplicatingId(formId);
@@ -200,6 +220,7 @@ export default function DashboardClientPage({
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
+              aria-label="Search forms"
               placeholder="Search forms..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -371,6 +392,27 @@ export default function DashboardClientPage({
                         <Files size={14} />
                       )}
                     </button>
+                    {(() => {
+                      const isCurrentlyClosed =
+                        form.status === "closed" ||
+                        (form.closedAt != null && new Date(form.closedAt) <= new Date());
+                      return (
+                        <button
+                          onClick={(e) => handleToggleStatus(e, form)}
+                          disabled={togglingId === form.id}
+                          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
+                          title={isCurrentlyClosed ? "Reopen form" : "Close form"}
+                        >
+                          {togglingId === form.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : isCurrentlyClosed ? (
+                            <Unlock size={14} />
+                          ) : (
+                            <Lock size={14} />
+                          )}
+                        </button>
+                      );
+                    })()}
                     <button
                       onClick={(e) => handleDeleteClick(e, form.id)}
                       className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"

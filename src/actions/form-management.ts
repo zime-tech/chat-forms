@@ -1,7 +1,7 @@
 "use server";
 
 import { getSession } from "auth";
-import { createForm, deleteForm, duplicateForm, updateForm } from "@/db/storage";
+import { createForm, deleteForm, duplicateForm, getForm, updateForm } from "@/db/storage";
 import { revalidatePath } from "next/cache";
 import { formTemplates } from "@/lib/form-templates";
 import { FormSettingsInsert } from "@/db/schema";
@@ -43,6 +43,31 @@ export async function createFormFromTemplateAction(templateId: string) {
 
   revalidatePath("/dashboard");
   return form;
+}
+
+export async function toggleFormStatusAction(formId: string) {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const form = await getForm(formId);
+  if (!form || form.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const isCurrentlyClosed =
+    form.status === "closed" ||
+    (form.closedAt != null && new Date(form.closedAt) <= new Date());
+
+  if (isCurrentlyClosed) {
+    await updateForm(formId, { ...form, status: "open", closedAt: null }, session.user.id);
+  } else {
+    await updateForm(formId, { ...form, status: "closed" }, session.user.id);
+  }
+
+  revalidatePath("/dashboard");
+  return { newStatus: isCurrentlyClosed ? "open" : "closed" };
 }
 
 export async function updateFormSettingsAction(

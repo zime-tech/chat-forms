@@ -3,7 +3,7 @@
 import { openai } from "@ai-sdk/openai";
 import { generateObject, Message } from "ai";
 import { db } from "@/db/db";
-import { formSessions, StructuredAnswer } from "@/db/schema";
+import { formSessions, StructuredAnswer, ExtendedMessage } from "@/db/schema";
 import { and, avg, count, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { getFormMessages } from "@/db/storage";
 import { formOverallSummarySchema } from "@/types/promp-schema";
@@ -24,6 +24,7 @@ export type FormSessionBasic = {
 
 export type FormSessionDetail = FormSessionBasic & {
   structuredData: StructuredAnswer[] | null;
+  messageHistory: ExtendedMessage[] | null;
 };
 
 /**
@@ -83,6 +84,7 @@ export async function getFormSessionDetails(
         detailedSummary: formSessions.detailedSummary,
         overallSentiment: formSessions.overallSentiment,
         structuredData: formSessions.structuredData,
+        messageHistory: formSessions.messageHistory,
         createdAt: formSessions.createdAt,
         flagged: formSessions.flagged,
         reviewed: formSessions.reviewed,
@@ -115,6 +117,7 @@ export async function getFormSessionsForExport(
       detailedSummary: formSessions.detailedSummary,
       overallSentiment: formSessions.overallSentiment,
       structuredData: formSessions.structuredData,
+      messageHistory: formSessions.messageHistory,
       createdAt: formSessions.createdAt,
       flagged: formSessions.flagged,
       reviewed: formSessions.reviewed,

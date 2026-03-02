@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import DashboardClientPage from "./client";
 import { getSession } from "auth";
 import { redirect } from "next/navigation";
 import { getUserForms } from "@/db/storage";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
 
 export default async function DashboardPage({
   searchParams,

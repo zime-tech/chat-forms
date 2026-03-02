@@ -73,7 +73,7 @@ export default function FormAssistantClient({
 
   const [inputValue, setInputValue] = useState("");
   const [userMessage, setUserMessage] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Filter out the "start_form" user message from display
@@ -290,19 +290,33 @@ export default function FormAssistantClient({
             </div>
           ) : !isFormCompleted ? (
             <form onSubmit={onSubmit} className="relative">
-              <input
+              <textarea
                 ref={inputRef}
-                className="w-full rounded-xl border border-border bg-surface px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                rows={1}
+                className="w-full resize-none rounded-xl border border-border bg-surface px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                 placeholder="Type your response..."
                 disabled={isLoading}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (inputValue.trim()) {
+                      const form = e.currentTarget.closest("form");
+                      form?.requestSubmit();
+                    }
+                  }
+                }}
               />
               <button
                 type="submit"
                 disabled={isLoading || !inputValue.trim()}
                 aria-label="Send message"
-                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-30 transition-opacity"
+                className="absolute right-2 bottom-2.5 flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-30 transition-opacity"
               >
                 {isLoading ? (
                   <Loader2 size={14} className="animate-spin" />

@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import RegisterForm from "./register-form";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "auth";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Create Account",
+};
 
 export default async function RegisterPage() {
   const session = await getServerSession(authOptions);

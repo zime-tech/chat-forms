@@ -30,8 +30,8 @@ export default function FormBuilderChat({
   onMessagesUpdate,
   onDetailedView = () => {},
 }: FormBuilderClientProps) {
-  const { messages, isLoading, error, clearError, handleSubmit } = useChat<FormResponse>({
-    sendMessage: async (formId, message) => {
+  const { messages, isLoading, error, clearError, handleSubmit } = useChat({
+    sendMessage: async (formId: string, message: Message) => {
       const newMessages = (await sendMessage(formId, message)) as ExtendedMessage[];
       if (onMessagesUpdate) {
         onMessagesUpdate(newMessages);

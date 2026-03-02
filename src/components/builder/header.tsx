@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   formId: string;
+  formTitle?: string;
   handleCopyLink: () => void;
   copied: boolean;
 }
 
 export default function Header({
   formId,
+  formTitle,
   handleCopyLink,
   copied,
 }: HeaderProps) {
@@ -26,7 +28,9 @@ export default function Header({
         >
           <ArrowLeft size={16} />
         </button>
-        <span className="text-sm font-medium text-foreground">Form Builder</span>
+        <span className="text-sm font-medium text-foreground truncate max-w-[200px] sm:max-w-none">
+          {formTitle || "Form Builder"}
+        </span>
       </div>
 
       <div className="flex items-center gap-2">

@@ -143,6 +143,7 @@ export default function FormBuilder({
 
       <Header
         formId={formId}
+        formTitle={formSettings?.title}
         handleCopyLink={handleCopyLink}
         copied={copied}
       />

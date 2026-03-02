@@ -12,7 +12,7 @@ import {
   FormSessionDetail,
   FormAnalytics,
 } from "@/actions/form-results";
-import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare, MessageCircle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, Calendar, Check, Copy, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare, MessageCircle, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const SENTIMENT_OPTIONS = ["all", "positive", "neutral", "negative"] as const;
@@ -35,6 +35,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const [dateRange, setDateRange] = useState<DateRangeFilter>("all");
   const [analytics, setAnalytics] = useState<FormAnalytics | null>(null);
   const [mobileShowDetail, setMobileShowDetail] = useState(false);
+  const [copiedTranscript, setCopiedTranscript] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -67,7 +68,12 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
       filtered = filtered.filter(
         (s) =>
           s.quickSummary?.toLowerCase().includes(q) ||
-          s.detailedSummary?.toLowerCase().includes(q)
+          s.detailedSummary?.toLowerCase().includes(q) ||
+          s.structuredData?.some(
+            (a) =>
+              a.question.toLowerCase().includes(q) ||
+              a.answer.toLowerCase().includes(q)
+          )
       );
     }
 
@@ -464,10 +470,30 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
 
               {selectedSession.messageHistory && selectedSession.messageHistory.length > 0 && (
                 <div className="rounded-lg border border-border bg-surface p-3">
-                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                    <MessageCircle size={11} />
-                    Conversation
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <MessageCircle size={11} />
+                      Conversation
+                    </p>
+                    <button
+                      onClick={() => {
+                        const lines = selectedSession.messageHistory!
+                          .filter((m) => m.content && m.content !== "start_form")
+                          .map((m) => `${m.role === "assistant" ? "Bot" : "You"}: ${m.content}`)
+                          .join("\n\n");
+                        navigator.clipboard.writeText(lines);
+                        setCopiedTranscript(true);
+                        setTimeout(() => setCopiedTranscript(false), 2000);
+                      }}
+                      className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      {copiedTranscript ? (
+                        <><Check size={10} className="text-success" /> Copied</>
+                      ) : (
+                        <><Copy size={10} /> Copy</>
+                      )}
+                    </button>
+                  </div>
                   <div className="space-y-2">
                     {selectedSession.messageHistory
                       .filter((msg) => msg.content && msg.content !== "start_form")

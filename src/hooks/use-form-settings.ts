@@ -25,13 +25,37 @@ export function useFormSettings(
     string | null
   >(null);
   const [formSettingsUpdated, setFormSettingsUpdated] = useState(false);
-  const [initialized, setInitialized] = useState(!!initialSettings);
+  // When initialSettings is explicitly passed (even as null), skip the client-side fetch.
+  // Using !== undefined rather than !! so that null (server says "no settings") also
+  // counts as initialized and avoids a redundant getForm() round-trip.
+  const [initialized, setInitialized] = useState(initialSettings !== undefined);
 
   useEffect(() => {
     if (!initialized) {
       const fetchFormSettings = async () => {
         const fs = await getForm(formId);
-        setFormSettings(fs as FormSettings);
+        if (!fs) {
+          setInitialized(true);
+          return;
+        }
+        setFormSettings({
+          title: fs.title,
+          tone: fs.tone ?? "",
+          persona: fs.persona ?? "",
+          keyInformation: fs.keyInformation ?? [],
+          targetAudience: fs.targetAudience ?? "",
+          expectedCompletionTime: fs.expectedCompletionTime ?? "",
+          aboutBusiness: fs.aboutBusiness ?? "",
+          welcomeMessage: fs.welcomeMessage ?? "",
+          callToAction: fs.callToAction ?? "",
+          endScreenMessage: fs.endScreenMessage ?? "",
+          status: fs.status,
+          closedAt: fs.closedAt,
+          maxResponses: fs.maxResponses,
+          webhookUrl: fs.webhookUrl,
+          accentColor: fs.accentColor,
+          emailNotifications: fs.emailNotifications,
+        });
         setInitialized(true);
       };
       fetchFormSettings();
@@ -57,7 +81,8 @@ export function useFormSettings(
         }
       }
     }
-  }, [messages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, initialized]);
 
   // Function to manually update form settings
   const updateFormSettings = async (

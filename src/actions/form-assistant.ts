@@ -101,7 +101,7 @@ export async function sendMessage(
     role: msg.role,
     content: formatMessageContent(
       msg,
-      formSettings as unknown as FormSettings,
+      formSettings,
       index === newMessages.length - 1
     ),
   }));
@@ -149,7 +149,7 @@ export async function sendMessage(
 
   // Fire webhook if configured and form is completed
   if (saveSummary && form.webhookUrl && result.object.summary) {
-    fireWebhook(form.webhookUrl, {
+    void fireWebhook(form.webhookUrl, {
       formId,
       sessionId,
       completedAt: new Date().toISOString(),
@@ -157,23 +157,25 @@ export async function sendMessage(
       detailedSummary: result.object.summary.detailedSummary,
       overallSentiment: result.object.summary.overallSentiment,
       structuredAnswers: result.object.summary.structuredAnswers || [],
-    });
+    }).catch((err) => console.error("[webhook] delivery failed:", err));
   }
 
   // Send email notification if enabled
   if (saveSummary && form.emailNotifications === "on" && form.userId && result.object.summary) {
     const { getUserEmail } = await import("@/db/storage");
-    getUserEmail(form.userId).then((email) => {
-      if (email) {
-        sendResponseNotification({
-          to: email,
-          formTitle: form.title,
-          quickSummary: result.object.summary!.quickSummary,
-          sentiment: result.object.summary!.overallSentiment,
-          formId,
-        });
-      }
-    });
+    void getUserEmail(form.userId)
+      .then((email) => {
+        if (email) {
+          return sendResponseNotification({
+            to: email,
+            formTitle: form.title,
+            quickSummary: result.object.summary!.quickSummary,
+            sentiment: result.object.summary!.overallSentiment,
+            formId,
+          });
+        }
+      })
+      .catch((err) => console.error("[email notification] failed:", err));
   }
 
   return newMessages;

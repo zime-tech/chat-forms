@@ -57,13 +57,34 @@ export default async function FormBuilderPage({
     });
   }
 
+  const initialFormSettings: FormSettings | null = form
+    ? {
+        title: form.title,
+        tone: form.tone ?? "",
+        persona: form.persona ?? "",
+        keyInformation: form.keyInformation ?? [],
+        targetAudience: form.targetAudience ?? "",
+        expectedCompletionTime: form.expectedCompletionTime ?? "",
+        aboutBusiness: form.aboutBusiness ?? "",
+        welcomeMessage: form.welcomeMessage ?? "",
+        callToAction: form.callToAction ?? "",
+        endScreenMessage: form.endScreenMessage ?? "",
+        status: form.status,
+        closedAt: form.closedAt,
+        maxResponses: form.maxResponses,
+        webhookUrl: form.webhookUrl,
+        accentColor: form.accentColor,
+        emailNotifications: form.emailNotifications,
+      }
+    : null;
+
   return (
     <FormBuilderClient
       formId={id}
       initialMessages={messages}
       createdAt={form?.createdAt?.toISOString()}
       responseCount={responseCount}
-      initialFormSettings={form as unknown as FormSettings}
+      initialFormSettings={initialFormSettings}
     />
   );
 }

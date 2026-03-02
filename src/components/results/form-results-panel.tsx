@@ -12,8 +12,18 @@ import {
   FormSessionDetail,
   FormAnalytics,
 } from "@/actions/form-results";
-import { AlertTriangle, Calendar, Check, Copy, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare, MessageCircle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, Calendar, Check, Copy, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare, MessageCircle, ArrowLeft, Link } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+
+function formatDuration(createdAt: Date | null, completedAt: Date | null): string | null {
+  if (!createdAt || !completedAt) return null;
+  const seconds = Math.round(
+    (new Date(completedAt).getTime() - new Date(createdAt).getTime()) / 1000
+  );
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+  return `${Math.floor(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`;
+}
 
 const SENTIMENT_OPTIONS = ["all", "positive", "neutral", "negative"] as const;
 type SentimentFilter = (typeof SENTIMENT_OPTIONS)[number];
@@ -33,6 +43,9 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
   const [dateRange, setDateRange] = useState<DateRangeFilter>("all");
+  const [showFlaggedOnly, setShowFlaggedOnly] = useState(false);
+  const [showUnreviewedOnly, setShowUnreviewedOnly] = useState(false);
+  const [copiedShareLink, setCopiedShareLink] = useState(false);
   const [analytics, setAnalytics] = useState<FormAnalytics | null>(null);
   const [mobileShowDetail, setMobileShowDetail] = useState(false);
   const [copiedTranscript, setCopiedTranscript] = useState(false);
@@ -93,8 +106,16 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
       );
     }
 
+    if (showFlaggedOnly) {
+      filtered = filtered.filter((s) => s.flagged);
+    }
+
+    if (showUnreviewedOnly) {
+      filtered = filtered.filter((s) => !s.reviewed);
+    }
+
     return filtered;
-  }, [sessions, searchQuery, sentimentFilter, dateRange]);
+  }, [sessions, searchQuery, sentimentFilter, dateRange, showFlaggedOnly, showUnreviewedOnly]);
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -151,13 +172,14 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const handleExport = async () => {
     try {
       const data = await getFormSessionsForExport(formId);
-      const headers = ["Date", "Summary", "Sentiment", "Details", "Structured Answers", "Flagged", "Reviewed"];
+      const headers = ["Started At", "Completed At", "Summary", "Sentiment", "Details", "Structured Answers", "Flagged", "Reviewed"];
       const rows = data.map((s) => {
         const structuredStr = s.structuredData
           ? s.structuredData.map((a) => `${a.question}: ${a.answer}`).join("; ")
           : "";
         return [
           s.createdAt ? new Date(s.createdAt).toISOString() : "",
+          s.completedAt ? new Date(s.completedAt).toISOString() : "",
           `"${(s.quickSummary || "").replace(/"/g, '""')}"`,
           s.overallSentiment || "",
           `"${(s.detailedSummary || "").replace(/"/g, '""')}"`,
@@ -181,7 +203,11 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
     }
   };
 
-  const hasActiveFilters = searchQuery.trim() !== "" || sentimentFilter !== "all";
+  const hasActiveFilters =
+    searchQuery.trim() !== "" ||
+    sentimentFilter !== "all" ||
+    showFlaggedOnly ||
+    showUnreviewedOnly;
 
   if (loading) {
     return (
@@ -207,6 +233,10 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   }
 
   if (sessions.length === 0) {
+    const shareUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/forms/${formId}`
+        : `/forms/${formId}`;
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
@@ -214,6 +244,20 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
           <p className="mt-1 text-xs text-muted-foreground">
             Responses will appear here when people complete your form.
           </p>
+          <button
+            onClick={async () => {
+              await navigator.clipboard.writeText(shareUrl);
+              setCopiedShareLink(true);
+              setTimeout(() => setCopiedShareLink(false), 2000);
+            }}
+            className="mt-4 flex items-center gap-1.5 mx-auto rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
+          >
+            {copiedShareLink ? (
+              <><Check size={11} className="text-success" /> Link copied!</>
+            ) : (
+              <><Link size={11} /> Copy share link</>
+            )}
+          </button>
         </div>
       </div>
     );
@@ -248,6 +292,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
 
       {/* Analytics summary */}
       {analytics && analytics.totalStarted > 0 && (
+        <>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px border-b border-border bg-border">
           <div className="bg-background px-3 py-2.5">
             <div className="flex items-center gap-1.5 text-muted-foreground mb-0.5">
@@ -284,6 +329,35 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
             </p>
           </div>
         </div>
+        {analytics.sentimentBreakdown && analytics.sentimentBreakdown.length > 0 && (
+          <div className="bg-background border-t border-border px-3 py-2 flex items-center gap-4">
+            <span className="text-[10px] font-medium text-muted-foreground shrink-0">Sentiment</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              {analytics.sentimentBreakdown.map((s) => {
+                const pct =
+                  analytics.totalCompleted > 0
+                    ? Math.round((s.count / analytics.totalCompleted) * 100)
+                    : 0;
+                const dotColor =
+                  s.sentiment.toLowerCase() === "positive"
+                    ? "bg-success"
+                    : s.sentiment.toLowerCase() === "negative"
+                      ? "bg-destructive"
+                      : "bg-muted-foreground/50";
+                return (
+                  <div key={s.sentiment} className="flex items-center gap-1">
+                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotColor}`} />
+                    <span className="text-[10px] text-muted-foreground">
+                      {s.sentiment.charAt(0).toUpperCase() + s.sentiment.slice(1)}{" "}
+                      <span className="text-foreground font-medium">{pct}%</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
@@ -311,7 +385,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <div className="flex gap-1">
                 {DATE_RANGE_OPTIONS.map((option) => (
                   <button
@@ -342,6 +416,31 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
                     {option === "all" ? "All" : option.charAt(0).toUpperCase() + option.slice(1)}
                   </button>
                 ))}
+              </div>
+              <div className="w-px h-3 bg-border" />
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setShowFlaggedOnly((v) => !v)}
+                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                    showFlaggedOnly
+                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Flag size={8} className={showFlaggedOnly ? "fill-amber-500" : ""} />
+                  Flagged
+                </button>
+                <button
+                  onClick={() => setShowUnreviewedOnly((v) => !v)}
+                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                    showUnreviewedOnly
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <CheckSquare size={8} />
+                  Unreviewed
+                </button>
               </div>
             </div>
           </div>
@@ -442,11 +541,19 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
                   <h3 className="font-medium text-foreground">
                     {selectedSession.quickSummary || "Unlabeled response"}
                   </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {selectedSession.createdAt
-                      ? formatDistanceToNow(new Date(selectedSession.createdAt), { addSuffix: true })
-                      : "Unknown date"}
-                  </p>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>
+                      {selectedSession.createdAt
+                        ? formatDistanceToNow(new Date(selectedSession.createdAt), { addSuffix: true })
+                        : "Unknown date"}
+                    </span>
+                    {formatDuration(selectedSession.createdAt, selectedSession.completedAt) && (
+                      <span className="flex items-center gap-1">
+                        <Clock size={10} />
+                        {formatDuration(selectedSession.createdAt, selectedSession.completedAt)}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button

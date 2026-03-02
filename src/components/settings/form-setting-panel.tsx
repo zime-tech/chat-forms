@@ -97,7 +97,10 @@ export default function FormSettingsPanel({
     }
     if (settings.webhookUrl) {
       try {
-        new URL(settings.webhookUrl);
+        const parsed = new URL(settings.webhookUrl);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          return "Webhook URL must use http or https (e.g., https://example.com/webhook).";
+        }
       } catch {
         return "Webhook URL must be a valid URL (e.g., https://example.com/webhook).";
       }

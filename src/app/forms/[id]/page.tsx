@@ -42,9 +42,9 @@ export default async function FormPage({
     notFound();
   }
 
-  const accepting = await isFormAcceptingResponses(id);
+  const { accepting, reason } = await isFormAcceptingResponses(id);
   if (!accepting) {
-    return <FormClosedPage title={formSettings.title} />;
+    return <FormClosedPage title={formSettings.title} reason={reason} />;
   }
 
   const accentColor = formSettings.accentColor;

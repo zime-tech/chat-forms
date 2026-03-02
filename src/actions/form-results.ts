@@ -117,14 +117,14 @@ export async function getFormSessionDetails(
     if (!session) return null;
 
     // Verify the session's form belongs to the current user
-    if (session.formId) {
-      const [form] = await db
-        .select({ userId: forms.userId })
-        .from(forms)
-        .where(eq(forms.id, session.formId));
-      if (!form || form.userId !== userSession.user.id) {
-        throw new Error("Unauthorized");
-      }
+    if (!session.formId) throw new Error("Unauthorized");
+
+    const [form] = await db
+      .select({ userId: forms.userId })
+      .from(forms)
+      .where(eq(forms.id, session.formId));
+    if (!form || form.userId !== userSession.user.id) {
+      throw new Error("Unauthorized");
     }
 
     return session;

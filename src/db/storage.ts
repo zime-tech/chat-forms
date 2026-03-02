@@ -164,6 +164,9 @@ export const duplicateForm = async (id: string, userId: string) => {
       callToAction: original.callToAction,
       endScreenMessage: original.endScreenMessage,
       accentColor: original.accentColor,
+      maxResponses: original.maxResponses,
+      webhookUrl: original.webhookUrl,
+      emailNotifications: original.emailNotifications,
       userId,
     })
     .returning();
@@ -184,24 +187,32 @@ export const getFormResponseCount = async (formId: string) => {
   return result?.count ?? 0;
 };
 
-export const isFormAcceptingResponses = async (formId: string) => {
+export type FormClosedReason = "closed" | "scheduled" | "max_responses";
+
+export const isFormAcceptingResponses = async (
+  formId: string
+): Promise<{ accepting: boolean; reason?: FormClosedReason }> => {
   if (!db) {
     throw new Error("Database not initialized");
   }
 
   const form = await getForm(formId);
-  if (!form) return false;
+  if (!form) return { accepting: false, reason: "closed" };
 
-  if (form.status === "closed") return false;
+  if (form.status === "closed") return { accepting: false, reason: "closed" };
 
-  if (form.closedAt && new Date(form.closedAt) <= new Date()) return false;
+  if (form.closedAt && new Date(form.closedAt) <= new Date()) {
+    return { accepting: false, reason: "scheduled" };
+  }
 
   if (form.maxResponses) {
     const responseCount = await getFormResponseCount(formId);
-    if (responseCount >= form.maxResponses) return false;
+    if (responseCount >= form.maxResponses) {
+      return { accepting: false, reason: "max_responses" };
+    }
   }
 
-  return true;
+  return { accepting: true };
 };
 
 export const updateForm = async (

@@ -17,6 +17,7 @@ pool.on("error", (err) => {
   console.error("Unexpected database pool error:", err);
 });
 
+// Drizzle's type inference is too deep for TypeScript with complex schemas
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let dbInstance: any = null;
 

@@ -100,6 +100,7 @@ export const getUserForms = async (userId: string) => {
       status: forms.status,
       closedAt: forms.closedAt,
       maxResponses: forms.maxResponses,
+      webhookUrl: forms.webhookUrl,
       createdAt: forms.createdAt,
       userId: forms.userId,
       responseCount: count(formSessions.id),

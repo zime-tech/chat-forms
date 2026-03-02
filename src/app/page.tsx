@@ -1,8 +1,27 @@
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { authOptions } from "auth";
 import { ArrowRight, MessageSquareText, Zap, BarChart3 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Chat Forms — AI-powered conversational forms",
+  description:
+    "Build interactive forms with AI. Your respondents chat naturally instead of filling out fields. Higher completion rates, richer data, better experience.",
+  openGraph: {
+    title: "Chat Forms — AI-powered conversational forms",
+    description:
+      "Build interactive forms with AI. Your respondents chat naturally instead of filling out fields.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Chat Forms — AI-powered conversational forms",
+    description:
+      "Build interactive forms with AI. Your respondents chat naturally instead of filling out fields.",
+  },
+};
 
 export default async function HomePage() {
   const session = await getServerSession(authOptions);

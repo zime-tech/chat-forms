@@ -106,6 +106,20 @@ export default function FormSummaryPanel({ formId }: FormSummaryPanelProps) {
           </div>
         )}
 
+        {summary.keyThemes && summary.keyThemes.length > 0 && (
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <p className="text-xs font-medium text-muted-foreground mb-3">Key Themes</p>
+            <ul className="space-y-1.5">
+              {summary.keyThemes.map((theme, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                  {theme}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {summary.summary && (
           <div className="rounded-lg border border-border bg-surface p-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">Summary</p>

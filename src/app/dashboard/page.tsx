@@ -6,6 +6,7 @@ import { getUserForms } from "@/db/storage";
 
 export const metadata: Metadata = {
   title: "Dashboard",
+  robots: { index: false },
 };
 
 export default async function DashboardPage({

@@ -7,7 +7,7 @@ import {
   createFormSessionAction,
 } from "@/actions/form-assistant";
 import { useChat } from "@/hooks/use-chat";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Send,
@@ -73,13 +73,22 @@ export default function FormAssistantClient({
 
   const [inputValue, setInputValue] = useState("");
   const [userMessage, setUserMessage] = useState("");
-  const [animateOut, setAnimateOut] = useState(false);
-  const [prevAssistantMessage, setPrevAssistantMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const latestAssistantMessage = [...messages]
-    .reverse()
-    .find((m) => m.role === "assistant");
+  // Filter out the "start_form" user message from display
+  const visibleMessages = messages.filter(
+    (m) => !(m.role === "user" && m.content === "start_form")
+  );
+
+  const scrollToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -102,21 +111,8 @@ export default function FormAssistantClient({
   }, [messages]);
 
   useEffect(() => {
-    if (latestAssistantMessage) {
-      if (prevAssistantMessage !== latestAssistantMessage.content) {
-        if (prevAssistantMessage) {
-          setAnimateOut(true);
-          const timer = setTimeout(() => {
-            setPrevAssistantMessage(latestAssistantMessage.content);
-            setAnimateOut(false);
-          }, 250);
-          return () => clearTimeout(timer);
-        } else {
-          setPrevAssistantMessage(latestAssistantMessage.content);
-        }
-      }
-    }
-  }, [latestAssistantMessage, prevAssistantMessage]);
+    scrollToBottom();
+  }, [messages.length, scrollToBottom]);
 
   useEffect(() => {
     if (!isLoading && inputRef.current && started) {
@@ -195,102 +191,131 @@ export default function FormAssistantClient({
         </header>
       )}
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 overflow-auto">
-        <div className="w-full max-w-lg space-y-6">
-          {/* Form title and progress */}
-          <div className="text-center space-y-3">
-            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              {formSettings.title}
-            </p>
-            {started && !isFormCompleted && (
-              <div className="mx-auto max-w-xs">
-                <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                {progress > 0 && (
-                  <p className="mt-1.5 text-[10px] text-muted-foreground">
-                    {progress}% complete
-                  </p>
-                )}
-              </div>
+      {/* Title and progress bar */}
+      <div className="text-center px-6 pt-6 pb-2 shrink-0">
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          {formSettings.title}
+        </p>
+        {started && !isFormCompleted && (
+          <div className="mx-auto mt-3 max-w-xs">
+            <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            {progress > 0 && (
+              <p className="mt-1.5 text-[10px] text-muted-foreground">
+                {progress}% complete
+              </p>
             )}
           </div>
+        )}
+      </div>
 
-          {/* Assistant message */}
-          {latestAssistantMessage && (
-            <div
-              className={`transition-all duration-250 ease-out ${
-                animateOut ? "opacity-0 -translate-y-2" : "opacity-100 translate-y-0"
-              }`}
-            >
-              <div className="rounded-xl border border-border bg-surface p-5">
+      {/* Conversation area */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-6 py-4"
+      >
+        <div className="mx-auto w-full max-w-lg space-y-4">
+          {/* Message history */}
+          {visibleMessages.map((msg, i) => {
+            const isLast =
+              i === visibleMessages.length - 1 ||
+              (i === visibleMessages.length - 2 &&
+                visibleMessages[visibleMessages.length - 1].role === "user");
+
+            return msg.role === "assistant" ? (
+              <div
+                key={msg.id}
+                className={`rounded-xl border border-border bg-surface p-5 transition-opacity ${
+                  isLast ? "opacity-100" : "opacity-70"
+                }`}
+              >
                 <p className="text-base leading-relaxed text-foreground">
-                  {latestAssistantMessage.content}
+                  {msg.content}
                 </p>
+              </div>
+            ) : (
+              <div key={msg.id} className="flex justify-end">
+                <div className="rounded-xl bg-accent/10 px-4 py-3 max-w-[85%]">
+                  <p className="text-sm text-foreground">{msg.content}</p>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Current user message while loading */}
+          {isLoading && userMessage && userMessage !== "start_form" && (
+            <div className="flex justify-end">
+              <div className="rounded-xl bg-accent/10 px-4 py-3 max-w-[85%]">
+                <p className="text-sm text-foreground">{userMessage}</p>
               </div>
             </div>
           )}
 
-          {/* User interaction area */}
-          <div className="animate-fade-in">
-            {isLoading && userMessage ? (
-              <div className="rounded-xl border border-accent/20 bg-accent/5 p-5">
-                <p className="text-sm text-foreground">
-                  {userMessage === "start_form" ? "Starting..." : userMessage}
-                </p>
-              </div>
-            ) : !started ? (
-              <div className="flex justify-center">
-                <button
-                  onClick={handleStartClick}
-                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-medium text-accent-foreground hover:opacity-90 transition-opacity"
-                >
-                  {formSettings.callToAction}
-                  <ArrowRight size={16} />
-                </button>
-              </div>
-            ) : isFormCompleted ? (
-              <div className="rounded-xl border border-success/20 bg-success/5 p-6 text-center">
-                <CheckCircle2 size={32} className="mx-auto mb-3 text-success" />
-                <p className="text-foreground">
-                  {formSettings.endScreenMessage}
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={onSubmit} className="relative">
-                <input
-                  ref={inputRef}
-                  className="w-full rounded-xl border border-border bg-surface px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
-                  placeholder="Type your response..."
-                  disabled={isLoading}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading || !inputValue.trim()}
-                  aria-label="Send message"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-30 transition-opacity"
-                >
-                  {isLoading ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Send size={14} />
-                  )}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="flex items-center gap-2 text-muted-foreground py-2">
+              <Loader2 size={14} className="animate-spin" />
+              <span className="text-xs">Processing...</span>
+            </div>
+          )}
 
-        {/* Error state */}
-        {error && (
-          <div className="mt-4 w-full max-w-lg animate-fade-in">
-            <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
+          {/* Completion card */}
+          {isFormCompleted && (
+            <div className="rounded-xl border border-success/20 bg-success/5 p-6 text-center">
+              <CheckCircle2 size={32} className="mx-auto mb-3 text-success" />
+              <p className="text-foreground">
+                {formSettings.endScreenMessage}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom input area */}
+      <div className="shrink-0 border-t border-border bg-background px-6 py-4">
+        <div className="mx-auto w-full max-w-lg">
+          {!started ? (
+            <div className="flex justify-center">
+              <button
+                onClick={handleStartClick}
+                className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-medium text-accent-foreground hover:opacity-90 transition-opacity"
+              >
+                {formSettings.callToAction}
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          ) : !isFormCompleted ? (
+            <form onSubmit={onSubmit} className="relative">
+              <input
+                ref={inputRef}
+                className="w-full rounded-xl border border-border bg-surface px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                placeholder="Type your response..."
+                disabled={isLoading}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !inputValue.trim()}
+                aria-label="Send message"
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-30 transition-opacity"
+              >
+                {isLoading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Send size={14} />
+                )}
+              </button>
+            </form>
+          ) : null}
+
+          {/* Error state */}
+          {error && (
+            <div className="mt-3 flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
               <AlertCircle size={16} className="shrink-0 text-destructive" />
               <p className="flex-1 text-sm text-foreground">{error}</p>
               <button
@@ -301,16 +326,8 @@ export default function FormAssistantClient({
                 Retry
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Loading dots */}
-        {isLoading && (
-          <div className="mt-6 flex items-center gap-2 text-muted-foreground">
-            <Loader2 size={14} className="animate-spin" />
-            <span className="text-xs">Processing...</span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

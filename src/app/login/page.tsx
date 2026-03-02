@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Sign In",
+  robots: { index: false },
 };
 
 export default async function LoginPage() {

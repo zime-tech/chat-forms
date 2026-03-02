@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Create Account",
+  robots: { index: false },
 };
 
 export default async function RegisterPage() {

@@ -36,6 +36,7 @@ export type FormSessionBasic = {
   quickSummary: string | null;
   detailedSummary: string | null;
   overallSentiment: string | null;
+  structuredData: StructuredAnswer[] | null;
   createdAt: Date | null;
   flagged: boolean | null;
   reviewed: boolean | null;
@@ -65,6 +66,7 @@ export async function getFormSessions(
         quickSummary: formSessions.quickSummary,
         detailedSummary: formSessions.detailedSummary,
         overallSentiment: formSessions.overallSentiment,
+        structuredData: formSessions.structuredData,
         createdAt: formSessions.createdAt,
         flagged: formSessions.flagged,
         reviewed: formSessions.reviewed,

@@ -18,6 +18,8 @@ export type FormSessionBasic = {
   detailedSummary: string | null;
   overallSentiment: string | null;
   createdAt: Date | null;
+  flagged: boolean | null;
+  reviewed: boolean | null;
 };
 
 export type FormSessionDetail = FormSessionBasic & {
@@ -43,6 +45,8 @@ export async function getFormSessions(
         detailedSummary: formSessions.detailedSummary,
         overallSentiment: formSessions.overallSentiment,
         createdAt: formSessions.createdAt,
+        flagged: formSessions.flagged,
+        reviewed: formSessions.reviewed,
       })
       .from(formSessions)
       .where(
@@ -80,6 +84,8 @@ export async function getFormSessionDetails(
         overallSentiment: formSessions.overallSentiment,
         structuredData: formSessions.structuredData,
         createdAt: formSessions.createdAt,
+        flagged: formSessions.flagged,
+        reviewed: formSessions.reviewed,
       })
       .from(formSessions)
       .where(eq(formSessions.id, sessionId));
@@ -110,6 +116,8 @@ export async function getFormSessionsForExport(
       overallSentiment: formSessions.overallSentiment,
       structuredData: formSessions.structuredData,
       createdAt: formSessions.createdAt,
+      flagged: formSessions.flagged,
+      reviewed: formSessions.reviewed,
     })
     .from(formSessions)
     .where(
@@ -202,4 +210,26 @@ export async function getOverallSummary(formId: string) {
   );
 
   return result.object;
+}
+
+/**
+ * Toggle flagged status on a session
+ */
+export async function toggleSessionFlagged(sessionId: string, flagged: boolean) {
+  if (!db) throw new Error("Database not initialized");
+  await db
+    .update(formSessions)
+    .set({ flagged })
+    .where(eq(formSessions.id, sessionId));
+}
+
+/**
+ * Toggle reviewed status on a session
+ */
+export async function toggleSessionReviewed(sessionId: string, reviewed: boolean) {
+  if (!db) throw new Error("Database not initialized");
+  await db
+    .update(formSessions)
+    .set({ reviewed })
+    .where(eq(formSessions.id, sessionId));
 }

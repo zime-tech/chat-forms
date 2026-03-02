@@ -6,6 +6,7 @@ import {
   uuid,
   primaryKey,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { Message } from "@ai-sdk/react";
@@ -57,6 +58,8 @@ export const formSessions = pgTable("form_sessions", {
   messageHistory: json("message_history").$type<ExtendedMessage[]>(),
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
+  flagged: boolean("flagged").default(false),
+  reviewed: boolean("reviewed").default(false),
 });
 
 export const formCreationLogs = pgTable("form_creation_logs", {

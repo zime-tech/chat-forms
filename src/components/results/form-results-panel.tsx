@@ -6,11 +6,13 @@ import {
   getFormSessionDetails,
   getFormSessionsForExport,
   getFormAnalytics,
+  toggleSessionFlagged,
+  toggleSessionReviewed,
   FormSessionBasic,
   FormSessionDetail,
   FormAnalytics,
 } from "@/actions/form-results";
-import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const SENTIMENT_OPTIONS = ["all", "positive", "neutral", "negative"] as const;
@@ -88,6 +90,26 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
     } catch {
       setError("Failed to load response details");
     }
+  };
+
+  const handleToggleFlag = async () => {
+    if (!selectedSession) return;
+    const newVal = !selectedSession.flagged;
+    setSelectedSession({ ...selectedSession, flagged: newVal });
+    setSessions((prev) =>
+      prev.map((s) => (s.id === selectedSession.id ? { ...s, flagged: newVal } : s))
+    );
+    await toggleSessionFlagged(selectedSession.id, newVal);
+  };
+
+  const handleToggleReviewed = async () => {
+    if (!selectedSession) return;
+    const newVal = !selectedSession.reviewed;
+    setSelectedSession({ ...selectedSession, reviewed: newVal });
+    setSessions((prev) =>
+      prev.map((s) => (s.id === selectedSession.id ? { ...s, reviewed: newVal } : s))
+    );
+    await toggleSessionReviewed(selectedSession.id, newVal);
   };
 
   const handleExport = async () => {
@@ -281,9 +303,17 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
                     selectedSession?.id === session.id ? "bg-accent/5 border-l-2 border-l-accent" : ""
                   }`}
                 >
-                  <p className="font-medium text-foreground truncate">
-                    {session.quickSummary || "Unlabeled"}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-medium text-foreground truncate flex-1">
+                      {session.quickSummary || "Unlabeled"}
+                    </p>
+                    {session.flagged && (
+                      <Flag size={10} className="shrink-0 text-amber-500 fill-amber-500" />
+                    )}
+                    {session.reviewed && (
+                      <CheckSquare size={10} className="shrink-0 text-success" />
+                    )}
+                  </div>
                   <div className="mt-0.5 flex items-center gap-2 text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar size={10} />
@@ -315,15 +345,41 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
         <div className="flex-1 overflow-y-auto p-4">
           {selectedSession ? (
             <div className="space-y-4">
-              <div>
-                <h3 className="font-medium text-foreground">
-                  {selectedSession.quickSummary || "Unlabeled response"}
-                </h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {selectedSession.createdAt
-                    ? formatDistanceToNow(new Date(selectedSession.createdAt), { addSuffix: true })
-                    : "Unknown date"}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="font-medium text-foreground">
+                    {selectedSession.quickSummary || "Unlabeled response"}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {selectedSession.createdAt
+                      ? formatDistanceToNow(new Date(selectedSession.createdAt), { addSuffix: true })
+                      : "Unknown date"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={handleToggleFlag}
+                    aria-label={selectedSession.flagged ? "Remove flag" : "Flag response"}
+                    className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+                      selectedSession.flagged
+                        ? "bg-amber-500/10 text-amber-500"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <Flag size={14} className={selectedSession.flagged ? "fill-amber-500" : ""} />
+                  </button>
+                  <button
+                    onClick={handleToggleReviewed}
+                    aria-label={selectedSession.reviewed ? "Mark as unreviewed" : "Mark as reviewed"}
+                    className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+                      selectedSession.reviewed
+                        ? "bg-success/10 text-success"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <CheckSquare size={14} />
+                  </button>
+                </div>
               </div>
 
               {selectedSession.overallSentiment && (

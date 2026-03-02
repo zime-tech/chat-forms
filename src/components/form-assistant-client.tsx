@@ -242,6 +242,7 @@ export default function FormAssistantClient({
                 <button
                   type="submit"
                   disabled={isLoading || !inputValue.trim()}
+                  aria-label="Send message"
                   className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-30 transition-opacity"
                 >
                   {isLoading ? (

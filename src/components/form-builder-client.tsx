@@ -271,6 +271,7 @@ export default function FormBuilder({
                 )}
                 <button
                   onClick={() => setShowMobilePreview(false)}
+                  aria-label="Close preview"
                   className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <X size={16} />

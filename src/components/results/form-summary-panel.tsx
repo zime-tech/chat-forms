@@ -73,6 +73,7 @@ export default function FormSummaryPanel({ formId }: FormSummaryPanelProps) {
         <button
           onClick={fetchSummary}
           disabled={loading}
+          aria-label="Refresh summary"
           className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <RefreshCw size={12} />

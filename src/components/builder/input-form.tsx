@@ -32,6 +32,7 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
         <button
           type="submit"
           disabled={isLoading || !inputValue.trim()}
+          aria-label="Send message"
           className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-md bg-accent text-accent-foreground disabled:opacity-30 transition-opacity"
         >
           {isLoading ? (

@@ -8,6 +8,7 @@ import {
 } from "@/actions/form-assistant";
 import { useChat } from "@/hooks/use-chat";
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Send,
   MessageSquareText,
@@ -33,8 +34,11 @@ export default function FormAssistantClient({
   formSettings,
   hideHeader,
 }: FormAssistantClientProps) {
+  const searchParams = useSearchParams();
+  const prefillMessage = searchParams.get("msg");
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId || null);
   const [started, setStarted] = useState(false);
+  const [prefillUsed, setPrefillUsed] = useState(false);
   const [isFormCompleted, setIsFormCompleted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [allMessages, setAllMessages] = useState<ExtendedMessage[]>([]);
@@ -141,6 +145,33 @@ export default function FormAssistantClient({
     const fakeEvent = {
       preventDefault: () => {},
       target: { elements: { 0: { value: "start_form" } } },
+    } as unknown as React.FormEvent<HTMLFormElement>;
+    handleSubmit(fakeEvent);
+  };
+
+  // Auto-start with prefilled message from URL params
+  useEffect(() => {
+    if (prefillMessage && !prefillUsed && !started) {
+      setPrefillUsed(true);
+      handleStartWithMessage(prefillMessage);
+    }
+  }, [prefillMessage, prefillUsed, started]);
+
+  const handleStartWithMessage = async (msg: string) => {
+    let sid = sessionId;
+    if (!sid) {
+      const newSession = await createFormSessionAction(formId);
+      sid = newSession.id;
+      setSessionId(sid);
+    }
+
+    setStarted(true);
+    setUserMessage(msg);
+    setInputValue(msg);
+
+    const fakeEvent = {
+      preventDefault: () => {},
+      target: { elements: { 0: { value: msg } } },
     } as unknown as React.FormEvent<HTMLFormElement>;
     handleSubmit(fakeEvent);
   };

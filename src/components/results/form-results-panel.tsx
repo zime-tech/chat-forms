@@ -12,7 +12,7 @@ import {
   FormSessionDetail,
   FormAnalytics,
 } from "@/actions/form-results";
-import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare } from "lucide-react";
+import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare, MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const SENTIMENT_OPTIONS = ["all", "positive", "neutral", "negative"] as const;
@@ -413,6 +413,34 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
                   <p className="text-sm text-foreground whitespace-pre-line">
                     {selectedSession.detailedSummary}
                   </p>
+                </div>
+              )}
+
+              {selectedSession.messageHistory && selectedSession.messageHistory.length > 0 && (
+                <div className="rounded-lg border border-border bg-surface p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <MessageCircle size={11} />
+                    Conversation
+                  </p>
+                  <div className="space-y-2">
+                    {selectedSession.messageHistory
+                      .filter((msg) => msg.content && msg.content !== "start_form")
+                      .map((msg, i) => (
+                        <div
+                          key={i}
+                          className={`text-xs ${
+                            msg.role === "assistant"
+                              ? "text-foreground"
+                              : "text-muted-foreground pl-3 border-l-2 border-accent/30"
+                          }`}
+                        >
+                          <span className="font-medium text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {msg.role === "assistant" ? "Bot" : "User"}
+                          </span>
+                          <p className="mt-0.5 whitespace-pre-line">{msg.content}</p>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               )}
             </div>

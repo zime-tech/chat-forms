@@ -7,6 +7,7 @@ import {
   primaryKey,
   integer,
   boolean,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { Message } from "@ai-sdk/react";
@@ -41,7 +42,9 @@ export const forms = pgTable("forms", {
   emailNotifications: text("email_notifications").default("off"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: uuid("user_id").references(() => users.id),
-});
+}, (table) => [
+  index("idx_forms_user_id").on(table.userId),
+]);
 
 export type StructuredAnswer = {
   question: string;
@@ -60,7 +63,10 @@ export const formSessions = pgTable("form_sessions", {
   completedAt: timestamp("completed_at"),
   flagged: boolean("flagged").default(false),
   reviewed: boolean("reviewed").default(false),
-});
+}, (table) => [
+  index("idx_form_sessions_form_id").on(table.formId),
+  index("idx_form_sessions_created_at").on(table.createdAt),
+]);
 
 export const formCreationLogs = pgTable("form_creation_logs", {
   id: uuid("id").primaryKey().defaultRandom(),

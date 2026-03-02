@@ -151,10 +151,13 @@ export default function FormBuilder({
         {/* Left panel — full width on mobile, side panel on desktop */}
         <div className={`flex flex-col border-r border-border overflow-hidden transition-all duration-200 w-full ${activeTab === "results" ? "md:w-[55%]" : "md:w-[45%]"}`}>
           {/* Tabs */}
-          <div className="flex border-b border-border bg-surface shrink-0">
+          <div className="flex border-b border-border bg-surface shrink-0" role="tablist">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`panel-${tab.id}`}
                 onClick={() => handleTabChange(tab.id)}
                 disabled={tab.id === "settings" && !formSettings}
                 title={tab.id === "settings" && !formSettings ? "Chat with the AI to generate form settings first" : undefined}
@@ -183,7 +186,7 @@ export default function FormBuilder({
 
           {/* Tab content */}
           <div className="flex-1 relative overflow-hidden">
-            <div className={`absolute inset-0 ${activeTab === "chat" ? "z-10 visible" : "z-0 invisible"}`}>
+            <div role="tabpanel" id="panel-chat" className={`absolute inset-0 ${activeTab === "chat" ? "z-10 visible" : "z-0 invisible"}`}>
               <FormBuilderChat
                 formId={formId}
                 initialMessages={initialMessages}
@@ -196,7 +199,7 @@ export default function FormBuilder({
               />
             </div>
 
-            <div className={`absolute inset-0 ${activeTab === "settings" ? "z-10 visible" : "z-0 invisible"}`}>
+            <div role="tabpanel" id="panel-settings" className={`absolute inset-0 ${activeTab === "settings" ? "z-10 visible" : "z-0 invisible"}`}>
               {formSettings ? (
                 <FormSettingsPanel
                   formId={formId}
@@ -213,15 +216,15 @@ export default function FormBuilder({
               )}
             </div>
 
-            <div className={`absolute inset-0 ${activeTab === "results" ? "z-10 visible" : "z-0 invisible"}`}>
+            <div role="tabpanel" id="panel-results" className={`absolute inset-0 ${activeTab === "results" ? "z-10 visible" : "z-0 invisible"}`}>
               <FormResultsPanel formId={formId} />
             </div>
 
-            <div className={`absolute inset-0 ${activeTab === "overall-summary" ? "z-10 visible" : "z-0 invisible"}`}>
+            <div role="tabpanel" id="panel-overall-summary" className={`absolute inset-0 ${activeTab === "overall-summary" ? "z-10 visible" : "z-0 invisible"}`}>
               <FormSummaryPanel formId={formId} />
             </div>
 
-            <div className={`absolute inset-0 ${activeTab === "share" ? "z-10 visible" : "z-0 invisible"}`}>
+            <div role="tabpanel" id="panel-share" className={`absolute inset-0 ${activeTab === "share" ? "z-10 visible" : "z-0 invisible"}`}>
               <FormSharingPanel formId={formId} />
             </div>
           </div>

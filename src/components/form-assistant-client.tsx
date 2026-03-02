@@ -329,7 +329,7 @@ export default function FormAssistantClient({
 
           {/* Error state */}
           {error && (
-            <div className="mt-3 flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
+            <div role="alert" className="mt-3 flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
               <AlertCircle size={16} className="shrink-0 text-destructive" />
               <p className="flex-1 text-sm text-foreground">
                 {error.toLowerCase().includes("too many requests")

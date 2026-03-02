@@ -130,6 +130,40 @@ export const deleteForm = async (id: string, userId: string) => {
   await db.delete(forms).where(eq(forms.id, id));
 };
 
+export const duplicateForm = async (id: string, userId: string) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const [original] = await db
+    .select()
+    .from(forms)
+    .where(and(eq(forms.id, id), eq(forms.userId, userId)));
+
+  if (!original) {
+    throw new Error("Form not found");
+  }
+
+  const [duplicate] = await db
+    .insert(forms)
+    .values({
+      title: `Copy of ${original.title}`,
+      tone: original.tone,
+      persona: original.persona,
+      keyInformation: original.keyInformation,
+      targetAudience: original.targetAudience,
+      expectedCompletionTime: original.expectedCompletionTime,
+      aboutBusiness: original.aboutBusiness,
+      welcomeMessage: original.welcomeMessage,
+      callToAction: original.callToAction,
+      endScreenMessage: original.endScreenMessage,
+      userId,
+    })
+    .returning();
+
+  return duplicate;
+};
+
 export const updateForm = async (
   id: string,
   updatedForm: FormSettingsInsert

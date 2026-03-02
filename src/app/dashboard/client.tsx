@@ -13,11 +13,12 @@ import {
   Users,
   Search,
   ArrowUpDown,
+  Files,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { deleteFormAction } from "@/actions/form-management";
+import { deleteFormAction, duplicateFormAction } from "@/actions/form-management";
 import { toast } from "sonner";
 
 const MAX_FORMS = 10;
@@ -109,6 +110,17 @@ export default function DashboardClientPage({
   const handleCancelDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     setConfirmDeleteId(null);
+  };
+
+  const handleDuplicate = async (e: React.MouseEvent, formId: string) => {
+    e.stopPropagation();
+    try {
+      await duplicateFormAction(formId);
+      toast.success("Form duplicated");
+      router.refresh();
+    } catch {
+      toast.error("Failed to duplicate form");
+    }
   };
 
   return (
@@ -283,6 +295,13 @@ export default function DashboardClientPage({
                       title="Open form"
                     >
                       <ExternalLink size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDuplicate(e, form.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      title="Duplicate form"
+                    >
+                      <Files size={14} />
                     </button>
                     <button
                       onClick={(e) => handleDeleteClick(e, form.id)}

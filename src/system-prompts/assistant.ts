@@ -61,6 +61,9 @@ A json object with the following fields:
   * If the user has not provided information for a specific 'keyInformation' item, leave it blank.
   * Add any important key information you collected from the user that is not part of the 'keyInformation' items.
 - **overallSentiment**: The overall sentiment of the user.
+- **structuredAnswers**: An array of objects mapping each keyInformation item to the user's response:
+  * Each object has a 'question' field (the keyInformation item) and an 'answer' field (the user's response, summarized concisely).
+  * Include one entry per keyInformation item. If the user didn't answer, set answer to "Not provided".
 
 
 ## User Experience Guidelines

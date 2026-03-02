@@ -315,6 +315,7 @@ export const addFormSessionSummary = async (
       detailedSummary: summary.detailedSummary,
       quickSummary: summary.quickSummary,
       overallSentiment: summary.overallSentiment,
+      structuredData: summary.structuredAnswers,
     })
     .where(eq(formSessions.id, id));
   return formSession;

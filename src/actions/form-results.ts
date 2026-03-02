@@ -3,7 +3,7 @@
 import { openai } from "@ai-sdk/openai";
 import { generateObject, Message } from "ai";
 import { db } from "@/db/db";
-import { formSessions } from "@/db/schema";
+import { formSessions, StructuredAnswer } from "@/db/schema";
 import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
 import { getFormMessages } from "@/db/storage";
 import { formOverallSummarySchema } from "@/types/promp-schema";
@@ -19,7 +19,9 @@ export type FormSessionBasic = {
   createdAt: Date | null;
 };
 
-export type FormSessionDetail = FormSessionBasic;
+export type FormSessionDetail = FormSessionBasic & {
+  structuredData: StructuredAnswer[] | null;
+};
 
 /**
  * Gets all form sessions for a specific form ID
@@ -75,6 +77,7 @@ export async function getFormSessionDetails(
         quickSummary: formSessions.quickSummary,
         detailedSummary: formSessions.detailedSummary,
         overallSentiment: formSessions.overallSentiment,
+        structuredData: formSessions.structuredData,
         createdAt: formSessions.createdAt,
       })
       .from(formSessions)
@@ -92,7 +95,7 @@ export async function getFormSessionDetails(
  */
 export async function getFormSessionsForExport(
   formId: string
-): Promise<FormSessionBasic[]> {
+): Promise<FormSessionDetail[]> {
   if (!db) {
     throw new Error("Database not initialized");
   }
@@ -104,6 +107,7 @@ export async function getFormSessionsForExport(
       quickSummary: formSessions.quickSummary,
       detailedSummary: formSessions.detailedSummary,
       overallSentiment: formSessions.overallSentiment,
+      structuredData: formSessions.structuredData,
       createdAt: formSessions.createdAt,
     })
     .from(formSessions)

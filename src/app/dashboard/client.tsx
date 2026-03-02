@@ -21,8 +21,7 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { deleteFormAction, duplicateFormAction } from "@/actions/form-management";
 import { toast } from "sonner";
-
-const MAX_FORMS = 10;
+import { MAX_FORMS_PER_USER } from "@/lib/constants";
 
 type FormWithCount = FormSettings & { responseCount: number };
 
@@ -33,7 +32,7 @@ export default function DashboardClientPage({
   forms: FormWithCount[];
   error?: string;
 }) {
-  const atLimit = forms.length >= MAX_FORMS;
+  const atLimit = forms.length >= MAX_FORMS_PER_USER;
   const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -173,7 +172,7 @@ export default function DashboardClientPage({
         {atLimit ? (
           <span className="inline-flex items-center gap-2 rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed">
             <Plus size={16} />
-            Limit reached ({MAX_FORMS})
+            Limit reached ({MAX_FORMS_PER_USER})
           </span>
         ) : (
           <Link
@@ -190,7 +189,7 @@ export default function DashboardClientPage({
       {error === "limit" && (
         <div className="mb-6 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
           <MessageSquareText size={16} className="shrink-0" />
-          <span>You&apos;ve reached the limit of {MAX_FORMS} forms. Delete an existing form to create a new one.</span>
+          <span>You&apos;ve reached the limit of {MAX_FORMS_PER_USER} forms. Delete an existing form to create a new one.</span>
         </div>
       )}
 

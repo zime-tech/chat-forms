@@ -14,6 +14,7 @@ import { createFormSessionAction } from "@/actions/form-assistant";
 import FormResultsPanel from "./results/form-results-panel";
 import FormSummaryPanel from "./results/form-summary-panel";
 import FormSharingPanel from "./sharing/form-sharing-panel";
+import { INITIAL_BUILDER_MESSAGE } from "@/lib/constants";
 
 interface FormBuilderProps {
   formId: string;
@@ -50,7 +51,7 @@ export default function FormBuilder({
         id: "initial-message",
         role: "assistant",
         content:
-          "Let's start creating the form. Give me an idea of what is form created for?",
+          INITIAL_BUILDER_MESSAGE,
       },
     ]
   );

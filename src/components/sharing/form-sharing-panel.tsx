@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Copy, Link as LinkIcon, QrCode, Code2, Download } from "lucide-react";
+import { Check, Copy, Link as LinkIcon, QrCode, Code2, Download, Zap } from "lucide-react";
 import QRCode from "qrcode";
 
 interface FormSharingPanelProps {
@@ -12,10 +12,14 @@ export default function FormSharingPanel({ formId }: FormSharingPanelProps) {
   const [copied, setCopied] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [embedHeight, setEmbedHeight] = useState(600);
+  const [prefillMsg, setPrefillMsg] = useState("");
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const formUrl = `${baseUrl}/forms/${formId}`;
   const embedCode = `<iframe src="${formUrl}" width="100%" height="${embedHeight}" frameborder="0" style="border:none;border-radius:12px;"></iframe>`;
+  const prefillUrl = prefillMsg.trim()
+    ? `${formUrl}?msg=${encodeURIComponent(prefillMsg.trim())}`
+    : "";
 
   useEffect(() => {
     if (formUrl && baseUrl) {
@@ -134,6 +138,42 @@ export default function FormSharingPanel({ formId }: FormSharingPanelProps) {
           <p className="mt-1.5 text-[10px] text-muted-foreground">
             Paste this HTML into your website to embed the form.
           </p>
+        </section>
+
+        {/* Prefill Link */}
+        <section>
+          <div className="flex items-center gap-2 mb-2">
+            <Zap size={14} className="text-muted-foreground" />
+            <h3 className="text-xs font-medium text-foreground">Prefill Link</h3>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-2">
+            Add an opening message so the form starts right away when someone opens the link.
+          </p>
+          <input
+            type="text"
+            value={prefillMsg}
+            onChange={(e) => setPrefillMsg(e.target.value)}
+            placeholder="e.g. I'm interested in your product..."
+            maxLength={200}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground mb-2"
+          />
+          {prefillUrl && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={prefillUrl}
+                className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-xs text-foreground font-mono"
+              />
+              <button
+                onClick={() => copyToClipboard(prefillUrl, "prefill")}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-foreground hover:bg-surface-hover transition-colors"
+              >
+                {copied === "prefill" ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+                {copied === "prefill" ? "Copied" : "Copy"}
+              </button>
+            </div>
+          )}
         </section>
       </div>
     </div>

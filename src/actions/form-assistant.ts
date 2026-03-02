@@ -21,6 +21,7 @@ import { withAIErrorHandling } from "@/lib/ai-utils";
 import { sendResponseNotification } from "@/lib/email";
 import { headers } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
+import { MAX_SESSION_MESSAGES } from "@/lib/constants";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -76,6 +77,9 @@ export async function sendMessage(
   }
 
   const messages = await getFormSessionMessages(sessionId);
+  if (messages.length >= MAX_SESSION_MESSAGES) {
+    throw new Error("This session has reached its message limit. Please start a new form.");
+  }
   const newMessages: ExtendedMessage[] = [...messages, message];
 
   await addFormSessionMessages(sessionId, [message]);

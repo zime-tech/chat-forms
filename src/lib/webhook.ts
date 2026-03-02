@@ -10,25 +10,41 @@ interface WebhookPayload {
   structuredAnswers: StructuredAnswer[];
 }
 
+const MAX_ATTEMPTS = 3;
+const RETRY_DELAYS = [1000, 2000];
+
+async function attemptWebhook(webhookUrl: string, body: string): Promise<boolean> {
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    signal: AbortSignal.timeout(10000),
+  });
+  return response.ok;
+}
+
 export async function fireWebhook(
   webhookUrl: string,
   payload: WebhookPayload
 ): Promise<void> {
-  try {
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(10000),
-    });
+  const body = JSON.stringify(payload);
 
-    if (!response.ok) {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const ok = await attemptWebhook(webhookUrl, body);
+      if (ok) return;
       console.error(
-        `Webhook failed: ${response.status} ${response.statusText} for ${webhookUrl}`
+        `Webhook attempt ${attempt}/${MAX_ATTEMPTS} failed (non-OK status) for ${webhookUrl}`
+      );
+    } catch (error) {
+      console.error(
+        `Webhook attempt ${attempt}/${MAX_ATTEMPTS} error for ${webhookUrl}:`,
+        error
       );
     }
-  } catch (error) {
-    // Log but don't throw — webhook failures shouldn't break the form flow
-    console.error(`Webhook error for ${webhookUrl}:`, error);
+
+    if (attempt < MAX_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS[attempt - 1]));
+    }
   }
 }

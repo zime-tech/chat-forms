@@ -18,6 +18,7 @@ import { ExtendedMessage } from "@/db/schema";
 import { trackEvent } from "@/lib/jitsu-server";
 import { fireWebhook } from "@/lib/webhook";
 import { withAIErrorHandling } from "@/lib/ai-utils";
+import { sendResponseNotification } from "@/lib/email";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -126,7 +127,6 @@ export async function sendMessage(
 
   // Fire webhook if configured and form is completed
   if (saveSummary && form.webhookUrl && result.object.summary) {
-    // Fire and forget — don't block the response
     fireWebhook(form.webhookUrl, {
       formId,
       sessionId,
@@ -135,6 +135,22 @@ export async function sendMessage(
       detailedSummary: result.object.summary.detailedSummary,
       overallSentiment: result.object.summary.overallSentiment,
       structuredAnswers: result.object.summary.structuredAnswers || [],
+    });
+  }
+
+  // Send email notification if enabled
+  if (saveSummary && form.emailNotifications === "on" && form.userId && result.object.summary) {
+    const { getUserEmail } = await import("@/db/storage");
+    getUserEmail(form.userId).then((email) => {
+      if (email) {
+        sendResponseNotification({
+          to: email,
+          formTitle: form.title,
+          quickSummary: result.object.summary!.quickSummary,
+          sentiment: result.object.summary!.overallSentiment,
+          formId,
+        });
+      }
     });
   }
 

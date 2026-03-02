@@ -20,6 +20,7 @@ import {
   Hash,
   Webhook,
   Palette,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -490,6 +491,36 @@ export default function FormSettingsPanel({
                 />
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   Receive a POST request with response data when a form is completed.
+                </p>
+              </FieldGroup>
+
+              <FieldGroup label="Email Notifications" icon={Bell}>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange("emailNotifications", "on")}
+                    className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                      settings.emailNotifications === "on"
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border text-muted-foreground hover:bg-surface-hover"
+                    }`}
+                  >
+                    On
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange("emailNotifications", "off")}
+                    className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                      settings.emailNotifications !== "on"
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border text-muted-foreground hover:bg-surface-hover"
+                    }`}
+                  >
+                    Off
+                  </button>
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Get an email when someone completes your form.
                 </p>
               </FieldGroup>
             </div>

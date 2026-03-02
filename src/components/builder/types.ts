@@ -25,4 +25,5 @@ export interface FormSettings {
   maxResponses?: number | null;
   webhookUrl?: string | null;
   accentColor?: string | null;
+  emailNotifications?: string | null;
 }

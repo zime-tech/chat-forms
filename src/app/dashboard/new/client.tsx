@@ -18,6 +18,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 const categoryIcons: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  General: FileText,
   Feedback: MessageSquareText,
   HR: Users,
   Events: CalendarCheck,
@@ -108,7 +109,7 @@ export default function TemplatePickerClient() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {formTemplates.map((template) => {
+        {formTemplates.filter((t) => t.id !== "blank").map((template) => {
           const Icon = categoryIcons[template.category] || Briefcase;
           const isCreating = creating === template.id;
 

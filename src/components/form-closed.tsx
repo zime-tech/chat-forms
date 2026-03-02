@@ -22,10 +22,24 @@ export default function FormClosedPage({ title }: { title: string }) {
             This form is no longer accepting responses
           </h1>
           <p className="text-sm text-muted-foreground">
-            The form owner has closed this form or it has reached its response limit.
+            The form owner has closed this form or it has reached its response
+            limit. If you believe this is an error, please contact the person
+            who shared this form with you.
           </p>
         </div>
       </div>
+
+      <footer className="border-t border-border bg-surface px-6 py-3 text-center shrink-0">
+        <p className="text-[10px] text-muted-foreground">
+          Powered by{" "}
+          <a
+            href="/"
+            className="font-medium text-accent hover:underline"
+          >
+            Chat Forms
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

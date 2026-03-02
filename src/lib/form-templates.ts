@@ -19,6 +19,24 @@ export interface FormTemplate {
 
 export const formTemplates: FormTemplate[] = [
   {
+    id: "blank",
+    name: "Blank Form",
+    description: "Start from scratch and let AI help you build your form",
+    category: "General",
+    settings: {
+      title: "New Form",
+      tone: "",
+      persona: "",
+      targetAudience: "",
+      keyInformation: [],
+      aboutBusiness: "",
+      welcomeMessage: "Welcome! Let's get started.",
+      callToAction: "Get Started",
+      endScreenMessage: "Thank you for your response!",
+      expectedCompletionTime: "",
+    },
+  },
+  {
     id: "customer-feedback",
     name: "Customer Feedback",
     description: "Collect customer satisfaction ratings and improvement suggestions",

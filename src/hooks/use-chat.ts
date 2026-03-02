@@ -35,17 +35,17 @@ function abortableWait(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export type ChatOptions<TResponse> = {
+export type ChatOptions = {
   sendMessage: (formId: string, message: Message) => Promise<Message[]>;
   formId: string;
   initialMessages?: Message[];
 };
 
-export function useChat<TResponse>({
+export function useChat({
   sendMessage,
   formId,
   initialMessages = [],
-}: ChatOptions<TResponse>) {
+}: ChatOptions) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

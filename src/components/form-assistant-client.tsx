@@ -43,7 +43,7 @@ export default function FormAssistantClient({
   const [progress, setProgress] = useState(0);
   const [allMessages, setAllMessages] = useState<ExtendedMessage[]>([]);
 
-  const { messages, isLoading, error, clearError, handleSubmit } = useChat<FormAssistantResponse>({
+  const { messages, isLoading, error, clearError, handleSubmit } = useChat({
     sendMessage: async (formId: string, message: Message): Promise<Message[]> => {
       if (!sessionId) throw new Error("Session not initialized");
 
@@ -145,15 +145,7 @@ export default function FormAssistantClient({
     handleSubmit(fakeEvent);
   };
 
-  // Auto-start with prefilled message from URL params
-  useEffect(() => {
-    if (prefillMessage && !prefillUsed && !started) {
-      setPrefillUsed(true);
-      handleStartWithMessage(prefillMessage);
-    }
-  }, [prefillMessage, prefillUsed, started]);
-
-  const handleStartWithMessage = async (msg: string) => {
+  const handleStartWithMessage = useCallback(async (msg: string) => {
     let sid = sessionId;
     if (!sid) {
       const newSession = await createFormSessionAction(formId);
@@ -170,7 +162,15 @@ export default function FormAssistantClient({
       target: { elements: { 0: { value: msg } } },
     } as unknown as React.FormEvent<HTMLFormElement>;
     handleSubmit(fakeEvent);
-  };
+  }, [sessionId, formId, handleSubmit]);
+
+  // Auto-start with prefilled message from URL params
+  useEffect(() => {
+    if (prefillMessage && !prefillUsed && !started) {
+      setPrefillUsed(true);
+      handleStartWithMessage(prefillMessage);
+    }
+  }, [prefillMessage, prefillUsed, started, handleStartWithMessage]);
 
   useEffect(() => {
     if (!isLoading && userMessage) {

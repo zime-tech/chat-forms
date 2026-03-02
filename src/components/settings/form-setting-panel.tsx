@@ -1,5 +1,5 @@
 import { FormSettings } from "@/components/builder/types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Save,
   Plus,
@@ -55,6 +55,7 @@ export default function FormSettingsPanel({
     useState<FormSettings>(formSettings);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     setSettings(formSettings);
@@ -109,7 +110,7 @@ export default function FormSettingsPanel({
     return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
     const validationError = validateSettings();
@@ -137,7 +138,19 @@ export default function FormSettingsPanel({
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [settings, onSettingsUpdate, validateSettings]);
+
+  // Cmd+S / Ctrl+S keyboard shortcut to save settings
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s" && hasChanges && !isSaving) {
+        e.preventDefault();
+        formRef.current?.requestSubmit();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [hasChanges, isSaving]);
 
   const handleDiscardChanges = () => {
     setSettings(originalSettings);
@@ -165,7 +178,7 @@ export default function FormSettingsPanel({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <section className="rounded-lg border border-border bg-surface p-5">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">

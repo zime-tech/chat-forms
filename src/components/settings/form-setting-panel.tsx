@@ -87,13 +87,46 @@ export default function FormSettingsPanel({
     handleInputChange("keyInformation", updatedKeyInformation);
   };
 
+  const validateSettings = (): string | null => {
+    if (!settings.title.trim()) {
+      return "Form title is required.";
+    }
+    if (settings.webhookUrl) {
+      try {
+        new URL(settings.webhookUrl);
+      } catch {
+        return "Webhook URL must be a valid URL (e.g., https://example.com/webhook).";
+      }
+    }
+    if (settings.maxResponses !== null && settings.maxResponses !== undefined) {
+      if (settings.maxResponses < 1) {
+        return "Max responses must be at least 1.";
+      }
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationError = validateSettings();
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    // Clean up empty key information items before saving
+    const cleanedSettings = {
+      ...settings,
+      keyInformation: settings.keyInformation.filter((item) => item.trim() !== ""),
+    };
+
     setIsSaving(true);
 
     try {
-      onSettingsUpdate(settings);
-      setOriginalSettings(settings);
+      onSettingsUpdate(cleanedSettings);
+      setSettings(cleanedSettings);
+      setOriginalSettings(cleanedSettings);
       toast.success("Settings saved successfully");
     } catch (error) {
       toast.error("Failed to save settings");

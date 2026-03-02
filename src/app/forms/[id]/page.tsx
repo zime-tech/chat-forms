@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import FormAssistantClient from "@/components/form-assistant-client";
 import { getForm, isFormAcceptingResponses } from "@/db/storage";
 import { FormSettings } from "@/components/builder/types";
@@ -33,10 +34,12 @@ export default async function FormPage({
       className="h-full"
       {...(accentColor ? { style: { "--accent": accentColor } as React.CSSProperties } : {})}
     >
-      <FormAssistantClient
-        formId={id}
-        formSettings={formSettings as FormSettings}
-      />
+      <Suspense>
+        <FormAssistantClient
+          formId={id}
+          formSettings={formSettings as FormSettings}
+        />
+      </Suspense>
     </div>
   );
 }

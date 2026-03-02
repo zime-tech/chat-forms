@@ -96,7 +96,6 @@ export const getUserForms = async (userId: string) => {
       welcomeMessage: forms.welcomeMessage,
       callToAction: forms.callToAction,
       endScreenMessage: forms.endScreenMessage,
-      messageHistory: forms.messageHistory,
       status: forms.status,
       closedAt: forms.closedAt,
       maxResponses: forms.maxResponses,
@@ -181,7 +180,7 @@ export const getFormResponseCount = async (formId: string) => {
   }
 
   const [result] = await db
-    .select({ count: count() })
+    .select({ count: count(formSessions.completedAt) })
     .from(formSessions)
     .where(eq(formSessions.formId, formId));
 

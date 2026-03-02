@@ -14,6 +14,7 @@ import {
   Search,
   ArrowUpDown,
   Files,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -37,6 +38,7 @@ export default function DashboardClientPage({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "responses" | "title">("newest");
 
@@ -145,12 +147,15 @@ export default function DashboardClientPage({
 
   const handleDuplicate = async (e: React.MouseEvent, formId: string) => {
     e.stopPropagation();
+    setDuplicatingId(formId);
     try {
       await duplicateFormAction(formId);
       toast.success("Form duplicated");
       router.refresh();
     } catch {
       toast.error("Failed to duplicate form");
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
@@ -275,7 +280,7 @@ export default function DashboardClientPage({
                     </span>
                   )}
                 </div>
-                <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1 shrink-0">
                     <Users size={12} />
                     {form.responseCount}{" "}
@@ -323,7 +328,7 @@ export default function DashboardClientPage({
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => handleCopyLink(e, form.id)}
                       className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -344,10 +349,15 @@ export default function DashboardClientPage({
                     </button>
                     <button
                       onClick={(e) => handleDuplicate(e, form.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      disabled={duplicatingId === form.id}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
                       title="Duplicate form"
                     >
-                      <Files size={14} />
+                      {duplicatingId === form.id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Files size={14} />
+                      )}
                     </button>
                     <button
                       onClick={(e) => handleDeleteClick(e, form.id)}

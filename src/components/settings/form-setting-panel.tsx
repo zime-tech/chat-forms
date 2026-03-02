@@ -18,6 +18,7 @@ import {
   Shield,
   CalendarClock,
   Hash,
+  Webhook,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -395,6 +396,24 @@ export default function FormSettingsPanel({
                     Remove limit
                   </button>
                 )}
+              </FieldGroup>
+
+              <FieldGroup label="Webhook URL" icon={Webhook}>
+                <input
+                  type="url"
+                  value={settings.webhookUrl ?? ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "webhookUrl",
+                      e.target.value || null
+                    )
+                  }
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="https://example.com/webhook"
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Receive a POST request with response data when a form is completed.
+                </p>
               </FieldGroup>
             </div>
           </section>

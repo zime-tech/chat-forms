@@ -23,4 +23,5 @@ export interface FormSettings {
   status?: string | null;
   closedAt?: Date | null;
   maxResponses?: number | null;
+  webhookUrl?: string | null;
 }

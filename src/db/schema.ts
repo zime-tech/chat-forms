@@ -35,6 +35,7 @@ export const forms = pgTable("forms", {
   status: text("status").default("active"),
   closedAt: timestamp("closed_at"),
   maxResponses: integer("max_responses"),
+  webhookUrl: text("webhook_url"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: uuid("user_id").references(() => users.id),
 });

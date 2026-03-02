@@ -1,7 +1,7 @@
 "use client";
 
 import { FormSettings } from "@/db/schema";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Plus,
   Clock,
@@ -39,6 +39,37 @@ export default function DashboardClientPage({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "responses" | "title">("newest");
+
+  const STORAGE_KEY = "dashboard_response_counts";
+
+  const getNewResponseCounts = useCallback(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) return {};
+      const prev: Record<string, number> = JSON.parse(stored);
+      const result: Record<string, number> = {};
+      for (const form of forms) {
+        const prevCount = prev[form.id] ?? 0;
+        const diff = form.responseCount - prevCount;
+        if (diff > 0) result[form.id] = diff;
+      }
+      return result;
+    } catch {
+      return {};
+    }
+  }, [forms]);
+
+  const [newCounts, setNewCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setNewCounts(getNewResponseCounts());
+    // Save current counts for next visit
+    const counts: Record<string, number> = {};
+    for (const form of forms) {
+      counts[form.id] = form.responseCount;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(counts));
+  }, [forms, getNewResponseCounts]);
 
   const filteredForms = useMemo(() => {
     let result = forms;
@@ -245,13 +276,16 @@ export default function DashboardClientPage({
                   )}
                 </div>
                 <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
-                  {form.responseCount > 0 && (
-                    <span className="flex items-center gap-1 shrink-0">
-                      <Users size={12} />
-                      {form.responseCount}{" "}
-                      {form.responseCount === 1 ? "response" : "responses"}
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1 shrink-0">
+                    <Users size={12} />
+                    {form.responseCount}{" "}
+                    {form.responseCount === 1 ? "response" : "responses"}
+                    {newCounts[form.id] && (
+                      <span className="rounded-full bg-accent px-1.5 py-px text-[10px] font-medium text-accent-foreground">
+                        +{newCounts[form.id]} new
+                      </span>
+                    )}
+                  </span>
                   {form.tone && (
                     <span className="truncate">{form.tone}</span>
                   )}

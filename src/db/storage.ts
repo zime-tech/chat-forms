@@ -100,6 +100,7 @@ export const getUserForms = async (userId: string) => {
       status: forms.status,
       closedAt: forms.closedAt,
       maxResponses: forms.maxResponses,
+      webhookUrl: forms.webhookUrl,
       createdAt: forms.createdAt,
       userId: forms.userId,
       responseCount: count(formSessions.id),
@@ -316,6 +317,7 @@ export const addFormSessionSummary = async (
       quickSummary: summary.quickSummary,
       overallSentiment: summary.overallSentiment,
       structuredData: summary.structuredAnswers,
+      completedAt: new Date(),
     })
     .where(eq(formSessions.id, id));
   return formSession;

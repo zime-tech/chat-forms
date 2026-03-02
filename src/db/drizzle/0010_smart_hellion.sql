@@ -1,0 +1,1 @@
+ALTER TABLE "form_sessions" ADD COLUMN "completed_at" timestamp;

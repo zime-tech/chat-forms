@@ -71,6 +71,13 @@
       "when": 1772423162556,
       "tag": "0009_square_dorian_gray",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1772424184980,
+      "tag": "0010_smart_hellion",
+      "breakpoints": true
     }
   ]
 }

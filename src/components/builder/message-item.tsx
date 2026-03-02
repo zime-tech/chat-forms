@@ -1,13 +1,13 @@
 "use client";
 
 import { Bot, User } from "lucide-react";
-import { ExtendedMessage } from "./types";
+import { ExtendedMessage, FormSettings } from "./types";
 import FormSettingsSummary from "./form-settings-summary";
 
 interface MessageItemProps {
   message: ExtendedMessage;
   isLastFormUpdate: boolean;
-  formSettings: any | null;
+  formSettings: FormSettings | null;
   onDetailedView: () => void;
 }
 

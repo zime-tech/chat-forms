@@ -54,6 +54,7 @@ export const formSessions = pgTable("form_sessions", {
   structuredData: json("structured_data").$type<StructuredAnswer[]>(),
   messageHistory: json("message_history").$type<ExtendedMessage[]>(),
   createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
 });
 
 export const formCreationLogs = pgTable("form_creation_logs", {

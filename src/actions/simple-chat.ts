@@ -3,6 +3,7 @@
 import { openai } from "@ai-sdk/openai";
 import { generateObject, Message } from "ai";
 import { z } from "zod";
+import { withAIErrorHandling } from "@/lib/ai-utils";
 
 // A simpler response schema for demonstration
 export const simpleChatSchema = z.object({
@@ -15,13 +16,16 @@ export const simpleChatSchema = z.object({
 export type SimpleChatResponse = z.infer<typeof simpleChatSchema>;
 
 export async function sendSimpleMessage(messages: Message[]) {
-  const result = await generateObject({
-    model: openai("gpt-4o-mini"),
-    schemaName: "simple-chat",
-    schemaDescription: "A simple chat response with sentiment analysis",
-    schema: simpleChatSchema,
-    messages,
-  });
+  const result = await withAIErrorHandling((signal) =>
+    generateObject({
+      model: openai("gpt-4o-mini"),
+      schemaName: "simple-chat",
+      schemaDescription: "A simple chat response with sentiment analysis",
+      schema: simpleChatSchema,
+      messages,
+      abortSignal: signal,
+    })
+  );
 
   // Add current timestamp
   const response = {

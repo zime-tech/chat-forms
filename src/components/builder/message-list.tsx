@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { ExtendedMessage } from "./types";
+import { ExtendedMessage, FormSettings } from "./types";
 import MessageItem from "./message-item";
 
 interface MessageListProps {
   messages: ExtendedMessage[];
   lastFormUpdateMessageId: string | null;
-  formSettings: any | null;
+  formSettings: FormSettings | null;
   onDetailedView: () => void;
   isLoading?: boolean;
 }

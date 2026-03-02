@@ -4,10 +4,11 @@ import { openai } from "@ai-sdk/openai";
 import { generateObject, Message } from "ai";
 import { db } from "@/db/db";
 import { formSessions, StructuredAnswer } from "@/db/schema";
-import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
+import { and, avg, count, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { getFormMessages } from "@/db/storage";
 import { formOverallSummarySchema } from "@/types/promp-schema";
 import { getFormSummaryPrompt } from "@/system-prompts/results";
+import { withAIErrorHandling } from "@/lib/ai-utils";
 
 // Define types for our response that will be used on the client
 export type FormSessionBasic = {
@@ -122,6 +123,61 @@ export async function getFormSessionsForExport(
   return sessions;
 }
 
+export type FormAnalytics = {
+  totalStarted: number;
+  totalCompleted: number;
+  completionRate: number;
+  avgCompletionSeconds: number | null;
+  sentimentBreakdown: { sentiment: string; count: number }[];
+};
+
+/**
+ * Gets analytics for a form: started, completed, completion rate, avg time
+ */
+export async function getFormAnalytics(formId: string): Promise<FormAnalytics> {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const [totals] = await db
+    .select({
+      totalStarted: count(),
+      totalCompleted: count(formSessions.completedAt),
+      avgSeconds: sql<number | null>`
+        AVG(EXTRACT(EPOCH FROM (${formSessions.completedAt} - ${formSessions.createdAt})))
+      `.as("avg_seconds"),
+    })
+    .from(formSessions)
+    .where(eq(formSessions.formId, formId));
+
+  const sentimentRows: { sentiment: string | null; count: number }[] = await db
+    .select({
+      sentiment: formSessions.overallSentiment,
+      count: count(),
+    })
+    .from(formSessions)
+    .where(
+      and(
+        eq(formSessions.formId, formId),
+        isNotNull(formSessions.overallSentiment)
+      )
+    )
+    .groupBy(formSessions.overallSentiment);
+
+  const totalStarted = totals?.totalStarted ?? 0;
+  const totalCompleted = totals?.totalCompleted ?? 0;
+
+  return {
+    totalStarted,
+    totalCompleted,
+    completionRate: totalStarted > 0 ? Math.round((totalCompleted / totalStarted) * 100) : 0,
+    avgCompletionSeconds: totals?.avgSeconds ? Math.round(totals.avgSeconds) : null,
+    sentimentBreakdown: sentimentRows
+      .filter((r) => r.sentiment !== null)
+      .map((r) => ({ sentiment: r.sentiment!, count: r.count })),
+  };
+}
+
 /**
  * Get overall summary of all form sessions
  */
@@ -131,16 +187,19 @@ export async function getOverallSummary(formId: string) {
 
   const prompt = getFormSummaryPrompt(sessions, messages);
 
-  const result = await generateObject({
-    model: openai("gpt-4o-mini"),
-    messages: [
-      {
-        role: "system",
-        content: prompt,
-      },
-    ],
-    schema: formOverallSummarySchema,
-  });
+  const result = await withAIErrorHandling((signal) =>
+    generateObject({
+      model: openai("gpt-4o-mini"),
+      messages: [
+        {
+          role: "system",
+          content: prompt,
+        },
+      ],
+      schema: formOverallSummarySchema,
+      abortSignal: signal,
+    })
+  );
 
   return result.object;
 }

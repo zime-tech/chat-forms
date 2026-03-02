@@ -16,6 +16,7 @@ import {
 } from "@/db/storage";
 import { ExtendedMessage } from "@/db/schema";
 import { trackEvent } from "@/lib/jitsu-server";
+import { fireWebhook } from "@/lib/webhook";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -118,6 +119,20 @@ export async function sendMessage(
       sessionId,
     }),
   ]);
+
+  // Fire webhook if configured and form is completed
+  if (saveSummary && form.webhookUrl && result.object.summary) {
+    // Fire and forget — don't block the response
+    fireWebhook(form.webhookUrl, {
+      formId,
+      sessionId,
+      completedAt: new Date().toISOString(),
+      quickSummary: result.object.summary.quickSummary,
+      detailedSummary: result.object.summary.detailedSummary,
+      overallSentiment: result.object.summary.overallSentiment,
+      structuredAnswers: result.object.summary.structuredAnswers || [],
+    });
+  }
 
   return newMessages;
 }

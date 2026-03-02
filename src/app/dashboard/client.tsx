@@ -13,11 +13,12 @@ import {
   Users,
   Search,
   ArrowUpDown,
+  Files,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { deleteFormAction } from "@/actions/form-management";
+import { deleteFormAction, duplicateFormAction } from "@/actions/form-management";
 import { toast } from "sonner";
 
 const MAX_FORMS = 10;
@@ -109,6 +110,17 @@ export default function DashboardClientPage({
   const handleCancelDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     setConfirmDeleteId(null);
+  };
+
+  const handleDuplicate = async (e: React.MouseEvent, formId: string) => {
+    e.stopPropagation();
+    try {
+      await duplicateFormAction(formId);
+      toast.success("Form duplicated");
+      router.refresh();
+    } catch {
+      toast.error("Failed to duplicate form");
+    }
   };
 
   return (
@@ -217,9 +229,21 @@ export default function DashboardClientPage({
               }`}
             >
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-foreground truncate">
-                  {form.title}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-foreground truncate">
+                    {form.title}
+                  </h3>
+                  {(form.status === "closed" || (form.closedAt && new Date(form.closedAt) <= new Date())) && (
+                    <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                      Closed
+                    </span>
+                  )}
+                  {form.maxResponses && form.responseCount >= form.maxResponses && form.status !== "closed" && (
+                    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                      Limit reached
+                    </span>
+                  )}
+                </div>
                 <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
                   {form.responseCount > 0 && (
                     <span className="flex items-center gap-1 shrink-0">
@@ -283,6 +307,13 @@ export default function DashboardClientPage({
                       title="Open form"
                     >
                       <ExternalLink size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDuplicate(e, form.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      title="Duplicate form"
+                    >
+                      <Files size={14} />
                     </button>
                     <button
                       onClick={(e) => handleDeleteClick(e, form.id)}

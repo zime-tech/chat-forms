@@ -15,6 +15,10 @@ import {
   CheckCircle,
   ListOrdered,
   Loader2,
+  Shield,
+  CalendarClock,
+  Hash,
+  Webhook,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,7 +52,7 @@ export default function FormSettingsPanel({
 
   const handleInputChange = (
     field: keyof FormSettings,
-    value: string | string[]
+    value: string | string[] | number | Date | null
   ) => {
     setSettings((prev) => ({
       ...prev,
@@ -299,6 +303,118 @@ export default function FormSettingsPanel({
                   </div>
                 ))
               )}
+            </div>
+          </section>
+
+          {/* Form Status & Limits */}
+          <section className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
+              <Shield size={16} className="text-muted-foreground" />
+              Form Status & Limits
+            </h2>
+
+            <div className="space-y-4">
+              <FieldGroup label="Status" icon={Shield}>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange("status", "active")}
+                    className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                      settings.status !== "closed"
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border text-muted-foreground hover:bg-surface-hover"
+                    }`}
+                  >
+                    Active
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange("status", "closed")}
+                    className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                      settings.status === "closed"
+                        ? "border-destructive bg-destructive/10 text-destructive"
+                        : "border-border text-muted-foreground hover:bg-surface-hover"
+                    }`}
+                  >
+                    Closed
+                  </button>
+                </div>
+              </FieldGroup>
+
+              <FieldGroup label="Auto-close Date" icon={CalendarClock}>
+                <input
+                  type="datetime-local"
+                  value={
+                    settings.closedAt
+                      ? (() => {
+                          const d = new Date(settings.closedAt);
+                          const offset = d.getTimezoneOffset();
+                          const local = new Date(d.getTime() - offset * 60000);
+                          return local.toISOString().slice(0, 16);
+                        })()
+                      : ""
+                  }
+                  onChange={(e) =>
+                    handleInputChange(
+                      "closedAt",
+                      e.target.value ? new Date(e.target.value) : null
+                    )
+                  }
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                />
+                {settings.closedAt && (
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange("closedAt", null)}
+                    className="mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Clear date
+                  </button>
+                )}
+              </FieldGroup>
+
+              <FieldGroup label="Max Responses" icon={Hash}>
+                <input
+                  type="number"
+                  min={1}
+                  value={settings.maxResponses ?? ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "maxResponses",
+                      e.target.value ? parseInt(e.target.value, 10) : null
+                    )
+                  }
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="Unlimited"
+                />
+                {settings.maxResponses && (
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange("maxResponses", null)}
+                    className="mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Remove limit
+                  </button>
+                )}
+              </FieldGroup>
+
+              <FieldGroup label="Webhook URL" icon={Webhook}>
+                <input
+                  type="url"
+                  value={settings.webhookUrl ?? ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "webhookUrl",
+                      e.target.value || null
+                    )
+                  }
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="https://example.com/webhook"
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Receive a POST request with response data when a form is completed.
+                </p>
+              </FieldGroup>
             </div>
           </section>
 

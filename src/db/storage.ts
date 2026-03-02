@@ -97,6 +97,9 @@ export const getUserForms = async (userId: string) => {
       callToAction: forms.callToAction,
       endScreenMessage: forms.endScreenMessage,
       messageHistory: forms.messageHistory,
+      status: forms.status,
+      closedAt: forms.closedAt,
+      maxResponses: forms.maxResponses,
       createdAt: forms.createdAt,
       userId: forms.userId,
       responseCount: count(formSessions.id),
@@ -128,6 +131,73 @@ export const deleteForm = async (id: string, userId: string) => {
   await db.delete(formSessions).where(eq(formSessions.formId, id));
   // Delete form
   await db.delete(forms).where(eq(forms.id, id));
+};
+
+export const duplicateForm = async (id: string, userId: string) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const [original] = await db
+    .select()
+    .from(forms)
+    .where(and(eq(forms.id, id), eq(forms.userId, userId)));
+
+  if (!original) {
+    throw new Error("Form not found");
+  }
+
+  const [duplicate] = await db
+    .insert(forms)
+    .values({
+      title: `Copy of ${original.title}`,
+      tone: original.tone,
+      persona: original.persona,
+      keyInformation: original.keyInformation,
+      targetAudience: original.targetAudience,
+      expectedCompletionTime: original.expectedCompletionTime,
+      aboutBusiness: original.aboutBusiness,
+      welcomeMessage: original.welcomeMessage,
+      callToAction: original.callToAction,
+      endScreenMessage: original.endScreenMessage,
+      userId,
+    })
+    .returning();
+
+  return duplicate;
+};
+
+export const getFormResponseCount = async (formId: string) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const [result] = await db
+    .select({ count: count() })
+    .from(formSessions)
+    .where(eq(formSessions.formId, formId));
+
+  return result?.count ?? 0;
+};
+
+export const isFormAcceptingResponses = async (formId: string) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const form = await getForm(formId);
+  if (!form) return false;
+
+  if (form.status === "closed") return false;
+
+  if (form.closedAt && new Date(form.closedAt) <= new Date()) return false;
+
+  if (form.maxResponses) {
+    const responseCount = await getFormResponseCount(formId);
+    if (responseCount >= form.maxResponses) return false;
+  }
+
+  return true;
 };
 
 export const updateForm = async (
@@ -245,6 +315,7 @@ export const addFormSessionSummary = async (
       detailedSummary: summary.detailedSummary,
       quickSummary: summary.quickSummary,
       overallSentiment: summary.overallSentiment,
+      structuredData: summary.structuredAnswers,
     })
     .where(eq(formSessions.id, id));
   return formSession;

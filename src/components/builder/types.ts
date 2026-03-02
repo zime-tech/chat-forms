@@ -20,4 +20,8 @@ export interface FormSettings {
   callToAction: string;
   endScreenMessage: string;
   expectedCompletionTime: string;
+  status?: string | null;
+  closedAt?: Date | null;
+  maxResponses?: number | null;
+  webhookUrl?: string | null;
 }

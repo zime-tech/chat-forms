@@ -5,6 +5,7 @@ import {
   json,
   uuid,
   primaryKey,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { Message } from "@ai-sdk/react";
@@ -31,9 +32,18 @@ export const forms = pgTable("forms", {
   callToAction: text("call_to_action"),
   endScreenMessage: text("end_screen_message"),
   messageHistory: json("message_history").$type<ExtendedMessage[]>(),
+  status: text("status").default("active"),
+  closedAt: timestamp("closed_at"),
+  maxResponses: integer("max_responses"),
+  webhookUrl: text("webhook_url"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: uuid("user_id").references(() => users.id),
 });
+
+export type StructuredAnswer = {
+  question: string;
+  answer: string;
+};
 
 export const formSessions = pgTable("form_sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -41,6 +51,7 @@ export const formSessions = pgTable("form_sessions", {
   quickSummary: text("quick_summary"),
   detailedSummary: text("detailed_summary"),
   overallSentiment: text("overall_sentiment"),
+  structuredData: json("structured_data").$type<StructuredAnswer[]>(),
   messageHistory: json("message_history").$type<ExtendedMessage[]>(),
   createdAt: timestamp("created_at").defaultNow(),
 });

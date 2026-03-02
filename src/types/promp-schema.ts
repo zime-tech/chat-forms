@@ -29,6 +29,12 @@ export const formAssistantResponseSchema = z.object({
       quickSummary: z.string(),
       detailedSummary: z.string(),
       overallSentiment: z.string(),
+      structuredAnswers: z.array(
+        z.object({
+          question: z.string(),
+          answer: z.string(),
+        })
+      ),
     })
     .optional(),
 });

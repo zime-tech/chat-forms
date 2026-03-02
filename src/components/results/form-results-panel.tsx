@@ -32,7 +32,8 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
       const result = await getFormSessions(formId);
       setSessions(result || []);
       if (result?.length > 0 && !selectedSession) {
-        setSelectedSession(result[0]);
+        const details = await getFormSessionDetails(result[0].id);
+        if (details) setSelectedSession(details);
       }
     } catch {
       setError("Failed to load responses");
@@ -53,13 +54,19 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const handleExport = async () => {
     try {
       const data = await getFormSessionsForExport(formId);
-      const headers = ["Date", "Summary", "Details", "Sentiment"];
-      const rows = data.map((s) => [
-        s.createdAt ? new Date(s.createdAt).toISOString() : "",
-        `"${(s.quickSummary || "").replace(/"/g, '""')}"`,
-        `"${(s.detailedSummary || "").replace(/"/g, '""')}"`,
-        s.overallSentiment || "",
-      ]);
+      const headers = ["Date", "Summary", "Sentiment", "Details", "Structured Answers"];
+      const rows = data.map((s) => {
+        const structuredStr = s.structuredData
+          ? s.structuredData.map((a) => `${a.question}: ${a.answer}`).join("; ")
+          : "";
+        return [
+          s.createdAt ? new Date(s.createdAt).toISOString() : "",
+          `"${(s.quickSummary || "").replace(/"/g, '""')}"`,
+          s.overallSentiment || "",
+          `"${(s.detailedSummary || "").replace(/"/g, '""')}"`,
+          `"${structuredStr.replace(/"/g, '""')}"`,
+        ];
+      });
 
       const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
@@ -177,6 +184,24 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
                 <div className="rounded-lg border border-border bg-surface p-3">
                   <p className="text-xs font-medium text-muted-foreground mb-1">Sentiment</p>
                   <p className="text-sm text-foreground">{selectedSession.overallSentiment}</p>
+                </div>
+              )}
+
+              {selectedSession.structuredData && selectedSession.structuredData.length > 0 && (
+                <div className="rounded-lg border border-border bg-surface p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Responses</p>
+                  <div className="space-y-2.5">
+                    {selectedSession.structuredData.map((item, i) => (
+                      <div key={i}>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {item.question}
+                        </p>
+                        <p className="mt-0.5 text-sm text-foreground">
+                          {item.answer}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

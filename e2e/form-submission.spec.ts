@@ -53,7 +53,7 @@ test.describe("Form Submission (Public)", () => {
     await expect(page.locator("text=Chat Forms")).toBeVisible();
 
     // Should see the form title or closed message (form may be closed)
-    const formTitle = page.locator("text=Customer Satisfaction Survey");
+    const formTitle = page.locator("p:text('Customer Satisfaction Survey')");
     const closedMessage = page.locator("text=no longer accepting");
     await expect(formTitle.or(closedMessage)).toBeVisible();
   });

@@ -34,5 +34,5 @@ export default async function FormBuilderPage({
     });
   }
 
-  return <FormBuilderClient formId={id} initialMessages={messages} />;
+  return <FormBuilderClient formId={id} initialMessages={messages} createdAt={form?.createdAt?.toISOString()} />;
 }

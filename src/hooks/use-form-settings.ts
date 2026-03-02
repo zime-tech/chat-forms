@@ -33,7 +33,7 @@ export function useFormSettings(
       };
       fetchFormSettings();
     }
-  }, [initialized]);
+  }, [formId, initialized]);
 
   // Extract form settings from assistant messages
   useEffect(() => {

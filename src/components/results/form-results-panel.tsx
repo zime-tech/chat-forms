@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getFormSessions,
   getFormSessionDetails,
@@ -36,11 +36,21 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const [analytics, setAnalytics] = useState<FormAnalytics | null>(null);
   const [mobileShowDetail, setMobileShowDetail] = useState(false);
   const [copiedTranscript, setCopiedTranscript] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const sessionListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSessions();
     fetchAnalytics();
   }, [formId]);
+
+  useEffect(() => {
+    if (!selectedSession || !sessionListRef.current) return;
+    const btn = sessionListRef.current.querySelector<HTMLElement>(
+      `[data-session-id="${selectedSession.id}"]`
+    );
+    btn?.scrollIntoView({ block: "nearest" });
+  }, [selectedSession?.id]);
 
   const fetchAnalytics = async () => {
     try {
@@ -104,6 +114,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   };
 
   const handleSelectSession = async (sessionId: string) => {
+    setDetailLoading(true);
     try {
       const details = await getFormSessionDetails(sessionId);
       if (details) {
@@ -112,6 +123,8 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
       }
     } catch {
       setError("Failed to load response details");
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -332,7 +345,26 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
           </div>
 
           {/* Session list */}
-          <div className="flex-1 overflow-y-auto">
+          <div
+            ref={sessionListRef}
+            className="flex-1 overflow-y-auto focus:outline-none"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (!filteredSessions.length) return;
+              const idx = selectedSession
+                ? filteredSessions.findIndex((s) => s.id === selectedSession.id)
+                : -1;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                const next = filteredSessions[Math.min(idx + 1, filteredSessions.length - 1)];
+                if (next) handleSelectSession(next.id);
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                const prev = filteredSessions[Math.max(idx - 1, 0)];
+                if (prev) handleSelectSession(prev.id);
+              }
+            }}
+          >
             {filteredSessions.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <p className="text-xs text-muted-foreground">No matching responses</p>
@@ -341,6 +373,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
               filteredSessions.map((session) => (
                 <button
                   key={session.id}
+                  data-session-id={session.id}
                   onClick={() => handleSelectSession(session.id)}
                   className={`w-full text-left px-3 py-2.5 text-xs border-b border-border hover:bg-surface-hover transition-colors ${
                     selectedSession?.id === session.id ? "bg-accent/5 border-l-2 border-l-accent" : ""
@@ -385,7 +418,12 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
         </div>
 
         {/* Detail - full screen on mobile when shown */}
-        <div className={`flex-1 overflow-y-auto p-4 md:block ${mobileShowDetail ? "block" : "hidden"}`}>
+        <div className={`flex-1 overflow-y-auto p-4 md:block ${mobileShowDetail ? "block" : "hidden"} relative`}>
+          {detailLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/70 z-10">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
           {selectedSession ? (
             <div className="space-y-4">
               {/* Mobile back button */}

@@ -1,5 +1,5 @@
 import FormBuilderClient from "@/components/form-builder-client";
-import { createForm, getForm, getFormMessages } from "@/db/storage";
+import { getForm, getFormMessages } from "@/db/storage";
 import { getSession } from "auth";
 import { redirect } from "next/navigation";
 
@@ -17,30 +17,13 @@ export default async function FormBuilderPage({
     redirect("/login");
   }
 
-  let formId = id;
-  if (id === "new") {
-    try {
-      const [newForm] = await createForm({
-        title: "New Form",
-        userId: session?.user?.id as string,
-      });
-      redirect(`/dashboard/${newForm.id}`);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("maximum")) {
-        redirect("/dashboard?error=limit");
-      }
-      // Re-throw redirect errors (Next.js redirect throws internally)
-      throw error;
-    }
-  }
-
   // validate form belongs to user
-  const form = await getForm(formId);
+  const form = await getForm(id);
   if (form?.userId !== session?.user?.id) {
     redirect("/dashboard");
   }
 
-  const messages = await getFormMessages(formId);
+  const messages = await getFormMessages(id);
 
   if (messages.length === 0) {
     messages.push({
@@ -51,5 +34,5 @@ export default async function FormBuilderPage({
     });
   }
 
-  return <FormBuilderClient formId={formId} initialMessages={messages} />;
+  return <FormBuilderClient formId={id} initialMessages={messages} />;
 }

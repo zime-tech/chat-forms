@@ -283,26 +283,27 @@ export const addFormMessages = async (
     throw new Error("Database not initialized");
   }
 
-  if (userId) {
-    const [existing] = await db
-      .select({ userId: forms.userId })
-      .from(forms)
-      .where(eq(forms.id, id));
-    if (!existing || existing.userId !== userId) {
-      throw new Error("Unauthorized: you do not own this form");
-    }
+  // Single query: fetch full messageHistory (and userId for auth check in one round-trip).
+  // NOTE: do NOT use getFormMessages here — it applies slice(-20) for AI context and
+  // would silently drop older messages from storage once history exceeds 20 entries.
+  const [existing] = await db
+    .select({ userId: forms.userId, messageHistory: forms.messageHistory })
+    .from(forms)
+    .where(eq(forms.id, id));
+
+  if (userId && (!existing || existing.userId !== userId)) {
+    throw new Error("Unauthorized: you do not own this form");
   }
 
-  const existingMessages = await getFormMessages(id);
+  const existingMessages = existing?.messageHistory ?? [];
   const combined = [...existingMessages, ...newMessages];
-  // Cap stored history to prevent unbounded DB growth; reads already use slice(-20)
+  // Cap stored history to prevent unbounded DB growth; reads for AI context use slice(-20)
   const updatedMessages = combined.slice(-MAX_BUILDER_MESSAGES_STORED);
 
-  const form = await db
+  return db
     .update(forms)
     .set({ messageHistory: updatedMessages })
     .where(eq(forms.id, id));
-  return form;
 };
 
 export const createFormSession = async (newFormSession: FormSessionsInsert) => {

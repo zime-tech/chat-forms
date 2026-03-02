@@ -1,9 +1,10 @@
 "use server";
 
 import { getSession } from "auth";
-import { createForm, deleteForm, duplicateForm } from "@/db/storage";
+import { createForm, deleteForm, duplicateForm, updateForm } from "@/db/storage";
 import { revalidatePath } from "next/cache";
 import { formTemplates } from "@/lib/form-templates";
+import { FormSettingsInsert } from "@/db/schema";
 
 export async function deleteFormAction(formId: string) {
   const session = await getSession();
@@ -42,4 +43,16 @@ export async function createFormFromTemplateAction(templateId: string) {
 
   revalidatePath("/dashboard");
   return form;
+}
+
+export async function updateFormSettingsAction(
+  formId: string,
+  settings: FormSettingsInsert
+) {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  return updateForm(formId, settings, session.user.id);
 }

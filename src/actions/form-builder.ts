@@ -9,6 +9,7 @@ import { addFormMessages, getFormMessages, updateForm } from "@/db/storage";
 import { ExtendedMessage } from "@/db/schema";
 import { trackEvent } from "@/lib/jitsu-server";
 import { withAIErrorHandling } from "@/lib/ai-utils";
+import { getSession } from "auth";
 
 // Type for the form response
 export type FormResponse = z.infer<typeof formResponseSchema>;
@@ -24,9 +25,15 @@ const trackFormBuilderEvent = async (
 };
 
 export async function sendMessage(formId: string, message: Message) {
-  const messages = await getFormMessages(formId);
+  const session = await getSession();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+  const userId = session.user.id;
+
+  const messages = await getFormMessages(formId, userId);
   const newMessages: ExtendedMessage[] = [...messages, message];
-  await addFormMessages(formId, newMessages);
+  await addFormMessages(formId, newMessages, userId);
 
   const result = await withAIErrorHandling((signal) =>
     generateObject({
@@ -53,8 +60,8 @@ export async function sendMessage(formId: string, message: Message) {
         role: "assistant",
         responseData: result.object as FormResponse,
       },
-    ]),
-    updateForm(formId, result.object.formSettings),
+    ], userId),
+    updateForm(formId, result.object.formSettings, userId),
     trackFormBuilderEvent(formId, result.object.formSettingsUpdated),
   ]);
 

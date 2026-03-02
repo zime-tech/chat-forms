@@ -207,10 +207,22 @@ export const isFormAcceptingResponses = async (formId: string) => {
 
 export const updateForm = async (
   id: string,
-  updatedForm: FormSettingsInsert
+  updatedForm: FormSettingsInsert,
+  userId?: string
 ) => {
   if (!db) {
     throw new Error("Database not initialized");
+  }
+
+  // When userId is provided, verify ownership before updating
+  if (userId) {
+    const [existing] = await db
+      .select({ userId: forms.userId })
+      .from(forms)
+      .where(eq(forms.id, id));
+    if (!existing || existing.userId !== userId) {
+      throw new Error("Unauthorized: you do not own this form");
+    }
   }
 
   const form = await db
@@ -221,12 +233,17 @@ export const updateForm = async (
   return form;
 };
 
-export const getFormMessages = async (id: string) => {
+export const getFormMessages = async (id: string, userId?: string) => {
   if (!db) {
     throw new Error("Database not initialized");
   }
 
   const [form] = await db.select().from(forms).where(eq(forms.id, id));
+  if (!form) return [];
+
+  if (userId && form.userId !== userId) {
+    throw new Error("Unauthorized: you do not own this form");
+  }
 
   const messages = form?.messageHistory || [];
 
@@ -235,10 +252,21 @@ export const getFormMessages = async (id: string) => {
 
 export const addFormMessages = async (
   id: string,
-  newMessages: ExtendedMessage[]
+  newMessages: ExtendedMessage[],
+  userId?: string
 ) => {
   if (!db) {
     throw new Error("Database not initialized");
+  }
+
+  if (userId) {
+    const [existing] = await db
+      .select({ userId: forms.userId })
+      .from(forms)
+      .where(eq(forms.id, id));
+    if (!existing || existing.userId !== userId) {
+      throw new Error("Unauthorized: you do not own this form");
+    }
   }
 
   const existingMessages = await getFormMessages(id);

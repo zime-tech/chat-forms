@@ -38,6 +38,7 @@ export type FormSessionBasic = {
   overallSentiment: string | null;
   structuredData: StructuredAnswer[] | null;
   createdAt: Date | null;
+  completedAt: Date | null;
   flagged: boolean | null;
   reviewed: boolean | null;
 };
@@ -68,6 +69,7 @@ export async function getFormSessions(
         overallSentiment: formSessions.overallSentiment,
         structuredData: formSessions.structuredData,
         createdAt: formSessions.createdAt,
+        completedAt: formSessions.completedAt,
         flagged: formSessions.flagged,
         reviewed: formSessions.reviewed,
       })
@@ -110,6 +112,7 @@ export async function getFormSessionDetails(
         structuredData: formSessions.structuredData,
         messageHistory: formSessions.messageHistory,
         createdAt: formSessions.createdAt,
+        completedAt: formSessions.completedAt,
         flagged: formSessions.flagged,
         reviewed: formSessions.reviewed,
       })
@@ -157,6 +160,7 @@ export async function getFormSessionsForExport(
       structuredData: formSessions.structuredData,
       messageHistory: formSessions.messageHistory,
       createdAt: formSessions.createdAt,
+      completedAt: formSessions.completedAt,
       flagged: formSessions.flagged,
       reviewed: formSessions.reviewed,
     })

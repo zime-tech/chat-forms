@@ -5,6 +5,7 @@ import {
   json,
   uuid,
   primaryKey,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { Message } from "@ai-sdk/react";
@@ -31,6 +32,9 @@ export const forms = pgTable("forms", {
   callToAction: text("call_to_action"),
   endScreenMessage: text("end_screen_message"),
   messageHistory: json("message_history").$type<ExtendedMessage[]>(),
+  status: text("status").default("active"),
+  closedAt: timestamp("closed_at"),
+  maxResponses: integer("max_responses"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: uuid("user_id").references(() => users.id),
 });

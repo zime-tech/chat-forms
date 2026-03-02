@@ -50,6 +50,13 @@
       "when": 1743176284537,
       "tag": "0006_past_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1772421771316,
+      "tag": "0007_tan_mathemanic",
+      "breakpoints": true
     }
   ]
 }

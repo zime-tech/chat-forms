@@ -97,6 +97,9 @@ export const getUserForms = async (userId: string) => {
       callToAction: forms.callToAction,
       endScreenMessage: forms.endScreenMessage,
       messageHistory: forms.messageHistory,
+      status: forms.status,
+      closedAt: forms.closedAt,
+      maxResponses: forms.maxResponses,
       createdAt: forms.createdAt,
       userId: forms.userId,
       responseCount: count(formSessions.id),
@@ -162,6 +165,39 @@ export const duplicateForm = async (id: string, userId: string) => {
     .returning();
 
   return duplicate;
+};
+
+export const getFormResponseCount = async (formId: string) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const [result] = await db
+    .select({ count: count() })
+    .from(formSessions)
+    .where(eq(formSessions.formId, formId));
+
+  return result?.count ?? 0;
+};
+
+export const isFormAcceptingResponses = async (formId: string) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const form = await getForm(formId);
+  if (!form) return false;
+
+  if (form.status === "closed") return false;
+
+  if (form.closedAt && new Date(form.closedAt) <= new Date()) return false;
+
+  if (form.maxResponses) {
+    const responseCount = await getFormResponseCount(formId);
+    if (responseCount >= form.maxResponses) return false;
+  }
+
+  return true;
 };
 
 export const updateForm = async (

@@ -229,9 +229,21 @@ export default function DashboardClientPage({
               }`}
             >
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-foreground truncate">
-                  {form.title}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-foreground truncate">
+                    {form.title}
+                  </h3>
+                  {(form.status === "closed" || (form.closedAt && new Date(form.closedAt) <= new Date())) && (
+                    <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                      Closed
+                    </span>
+                  )}
+                  {form.maxResponses && form.responseCount >= form.maxResponses && form.status !== "closed" && (
+                    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                      Limit reached
+                    </span>
+                  )}
+                </div>
                 <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
                   {form.responseCount > 0 && (
                     <span className="flex items-center gap-1 shrink-0">

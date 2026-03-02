@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { FormSettings } from "@/components/builder/types";
 import { Message } from "@ai-sdk/react";
 import { ExtendedMessage } from "@/components/builder/types";
-import { getForm, updateForm } from "@/db/storage";
+import { getForm } from "@/db/storage";
+import { updateFormSettingsAction } from "@/actions/form-management";
 
 interface UseFormSettingsResult {
   formSettings: FormSettings | null;
@@ -61,8 +62,7 @@ export function useFormSettings(
     messageId: string
   ) => {
     if (messageId === "manual-update") {
-      console.log("Updating form settings", messageId);
-      await updateForm(formId, settings);
+      await updateFormSettingsAction(formId, settings);
     } else {
       setLastFormUpdateMessageId(messageId);
     }

@@ -3,12 +3,31 @@
 import { openai } from "@ai-sdk/openai";
 import { generateObject, Message } from "ai";
 import { db } from "@/db/db";
-import { formSessions, StructuredAnswer, ExtendedMessage } from "@/db/schema";
+import { formSessions, forms, StructuredAnswer, ExtendedMessage } from "@/db/schema";
 import { and, avg, count, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { getFormMessages } from "@/db/storage";
 import { formOverallSummarySchema } from "@/types/promp-schema";
 import { getFormSummaryPrompt } from "@/system-prompts/results";
 import { withAIErrorHandling } from "@/lib/ai-utils";
+import { getSession } from "auth";
+
+async function requireFormOwnership(formId: string): Promise<string> {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+  if (!db) throw new Error("Database not initialized");
+
+  const [form] = await db
+    .select({ userId: forms.userId })
+    .from(forms)
+    .where(eq(forms.id, formId));
+
+  if (!form || form.userId !== session.user.id) {
+    throw new Error("Unauthorized: you do not own this form");
+  }
+  return session.user.id;
+}
 
 // Define types for our response that will be used on the client
 export type FormSessionBasic = {
@@ -33,6 +52,7 @@ export type FormSessionDetail = FormSessionBasic & {
 export async function getFormSessions(
   formId: string
 ): Promise<FormSessionBasic[]> {
+  await requireFormOwnership(formId);
   if (!db) {
     throw new Error("Database not initialized");
   }
@@ -71,6 +91,8 @@ export async function getFormSessions(
 export async function getFormSessionDetails(
   sessionId: string
 ): Promise<FormSessionDetail | null> {
+  const userSession = await getSession();
+  if (!userSession?.user?.id) throw new Error("Unauthorized");
   if (!db) {
     throw new Error("Database not initialized");
   }
@@ -92,7 +114,20 @@ export async function getFormSessionDetails(
       .from(formSessions)
       .where(eq(formSessions.id, sessionId));
 
-    return session || null;
+    if (!session) return null;
+
+    // Verify the session's form belongs to the current user
+    if (session.formId) {
+      const [form] = await db
+        .select({ userId: forms.userId })
+        .from(forms)
+        .where(eq(forms.id, session.formId));
+      if (!form || form.userId !== userSession.user.id) {
+        throw new Error("Unauthorized");
+      }
+    }
+
+    return session;
   } catch (error) {
     console.error("Error fetching form session details:", error);
     throw new Error("Failed to fetch form session details");
@@ -105,6 +140,7 @@ export async function getFormSessionDetails(
 export async function getFormSessionsForExport(
   formId: string
 ): Promise<FormSessionDetail[]> {
+  await requireFormOwnership(formId);
   if (!db) {
     throw new Error("Database not initialized");
   }
@@ -146,6 +182,7 @@ export type FormAnalytics = {
  * Gets analytics for a form: started, completed, completion rate, avg time
  */
 export async function getFormAnalytics(formId: string): Promise<FormAnalytics> {
+  await requireFormOwnership(formId);
   if (!db) {
     throw new Error("Database not initialized");
   }
@@ -193,6 +230,7 @@ export async function getFormAnalytics(formId: string): Promise<FormAnalytics> {
  * Get overall summary of all form sessions
  */
 export async function getOverallSummary(formId: string) {
+  // requireFormOwnership is called inside getFormSessions
   const sessions = await getFormSessions(formId);
   const messages = await getFormMessages(formId);
 
@@ -219,7 +257,17 @@ export async function getOverallSummary(formId: string) {
  * Toggle flagged status on a session
  */
 export async function toggleSessionFlagged(sessionId: string, flagged: boolean) {
+  const userSession = await getSession();
+  if (!userSession?.user?.id) throw new Error("Unauthorized");
   if (!db) throw new Error("Database not initialized");
+
+  // Verify session belongs to user's form
+  const [session] = await db
+    .select({ formId: formSessions.formId })
+    .from(formSessions)
+    .where(eq(formSessions.id, sessionId));
+  if (session?.formId) await requireFormOwnership(session.formId);
+
   await db
     .update(formSessions)
     .set({ flagged })
@@ -230,7 +278,17 @@ export async function toggleSessionFlagged(sessionId: string, flagged: boolean) 
  * Toggle reviewed status on a session
  */
 export async function toggleSessionReviewed(sessionId: string, reviewed: boolean) {
+  const userSession = await getSession();
+  if (!userSession?.user?.id) throw new Error("Unauthorized");
   if (!db) throw new Error("Database not initialized");
+
+  // Verify session belongs to user's form
+  const [session] = await db
+    .select({ formId: formSessions.formId })
+    .from(formSessions)
+    .where(eq(formSessions.id, sessionId));
+  if (session?.formId) await requireFormOwnership(session.formId);
+
   await db
     .update(formSessions)
     .set({ reviewed })

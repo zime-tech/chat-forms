@@ -1,7 +1,32 @@
 "use client";
 
 import { Message } from "@ai-sdk/react";
-import { useState } from "react";
+import { useState, useRef } from "react";
+
+const MAX_RETRIES = 2;
+const RETRY_DELAYS = [1000, 2000];
+
+function isRetryableError(err: unknown): boolean {
+  if (err instanceof Error) {
+    const msg = err.message.toLowerCase();
+    return (
+      msg.includes("timeout") ||
+      msg.includes("too long") ||
+      msg.includes("network") ||
+      msg.includes("fetch failed") ||
+      msg.includes("failed to fetch") ||
+      msg.includes("rate") ||
+      msg.includes("503") ||
+      msg.includes("502") ||
+      msg.includes("429")
+    );
+  }
+  return false;
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export type ChatOptions<TResponse> = {
   sendMessage: (formId: string, message: Message) => Promise<Message[]>;
@@ -17,6 +42,7 @@ export function useChat<TResponse>({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const retryCountRef = useRef(0);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,20 +62,35 @@ export function useChat<TResponse>({
       content: userMessage,
     };
 
+    const prevMessages = messages;
     setMessages([...messages, message]);
     setIsLoading(true);
     setError(null);
+    retryCountRef.current = 0;
+
+    const attemptSend = async (): Promise<Message[]> => {
+      try {
+        return await sendMessage(formId, message);
+      } catch (err) {
+        if (isRetryableError(err) && retryCountRef.current < MAX_RETRIES) {
+          const delay = RETRY_DELAYS[retryCountRef.current];
+          retryCountRef.current++;
+          await wait(delay);
+          return attemptSend();
+        }
+        throw err;
+      }
+    };
 
     try {
-      const updatedMessages = await sendMessage(formId, message);
+      const updatedMessages = await attemptSend();
       setMessages(updatedMessages);
     } catch (err) {
       console.error("Error sending message:", err);
       setError(
         err instanceof Error ? err.message : "Something went wrong. Please try again."
       );
-      // Revert to messages before the user message
-      setMessages(messages);
+      setMessages(prevMessages);
     } finally {
       setIsLoading(false);
     }

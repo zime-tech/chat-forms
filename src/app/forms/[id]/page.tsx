@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 import FormAssistantClient from "@/components/form-assistant-client";
 import { getForm, isFormAcceptingResponses } from "@/db/storage";
 import { FormSettings } from "@/components/builder/types";
 import { notFound } from "next/navigation";
 import FormClosedPage from "@/components/form-closed";
+
+// Deduplicate getForm calls within the same request (generateMetadata + page body)
+const getFormCached = cache(getForm);
 
 export async function generateMetadata({
   params,
@@ -12,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const form = await getForm(id);
+  const form = await getFormCached(id);
   if (!form) return { title: "Form Not Found" };
   return {
     title: form.title,
@@ -34,7 +37,7 @@ export default async function FormPage({
 
   let formSettings;
   try {
-    formSettings = await getForm(id);
+    formSettings = await getFormCached(id);
   } catch {
     notFound();
   }
@@ -42,7 +45,7 @@ export default async function FormPage({
     notFound();
   }
 
-  const { accepting, reason } = await isFormAcceptingResponses(id);
+  const { accepting, reason } = await isFormAcceptingResponses(id, formSettings);
   if (!accepting) {
     return <FormClosedPage title={formSettings.title} reason={reason} />;
   }

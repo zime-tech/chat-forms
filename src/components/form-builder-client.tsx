@@ -20,6 +20,7 @@ interface FormBuilderProps {
   initialMessages?: Message[];
   createdAt?: string;
   responseCount?: number;
+  initialFormSettings?: FormSettings | null;
 }
 
 const tabs = [
@@ -35,6 +36,7 @@ export default function FormBuilder({
   initialMessages,
   createdAt,
   responseCount,
+  initialFormSettings,
 }: FormBuilderProps) {
   const getInitialTab = (): "chat" | "settings" | "results" | "overall-summary" | "share" => {
     if (typeof window === "undefined") return "chat";
@@ -64,7 +66,7 @@ export default function FormBuilder({
     updateFormSettings,
     formSettingsUpdated,
     setFormSettingsUpdated,
-  } = useFormSettings(messages, formId);
+  } = useFormSettings(messages, formId, initialFormSettings);
 
   const [copied, setCopied] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);

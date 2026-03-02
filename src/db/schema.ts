@@ -36,6 +36,8 @@ export const forms = pgTable("forms", {
   closedAt: timestamp("closed_at"),
   maxResponses: integer("max_responses"),
   webhookUrl: text("webhook_url"),
+  accentColor: text("accent_color"),
+  emailNotifications: text("email_notifications").default("off"),
   createdAt: timestamp("created_at").defaultNow(),
   userId: uuid("user_id").references(() => users.id),
 });

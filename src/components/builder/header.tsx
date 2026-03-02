@@ -21,6 +21,7 @@ export default function Header({
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push("/dashboard")}
+          aria-label="Back to dashboard"
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <ArrowLeft size={16} />

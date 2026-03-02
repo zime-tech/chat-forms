@@ -26,10 +26,17 @@ export default async function FormPage({
     return <FormClosedPage title={formSettings.title} />;
   }
 
+  const accentColor = formSettings.accentColor;
+
   return (
-    <FormAssistantClient
-      formId={id}
-      formSettings={formSettings as FormSettings}
-    />
+    <div
+      className="h-full"
+      {...(accentColor ? { style: { "--accent": accentColor } as React.CSSProperties } : {})}
+    >
+      <FormAssistantClient
+        formId={id}
+        formSettings={formSettings as FormSettings}
+      />
+    </div>
   );
 }

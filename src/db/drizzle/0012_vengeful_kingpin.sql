@@ -1,0 +1,1 @@
+ALTER TABLE "forms" ADD COLUMN "email_notifications" text DEFAULT 'off';

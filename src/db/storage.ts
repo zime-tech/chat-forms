@@ -7,6 +7,7 @@ import {
   formCreationLogs,
   formSessions,
   forms,
+  users,
 } from "@/db/schema";
 import { db } from "@/db/db";
 import { and, count, desc, eq, gte, lte } from "drizzle-orm";
@@ -101,6 +102,8 @@ export const getUserForms = async (userId: string) => {
       closedAt: forms.closedAt,
       maxResponses: forms.maxResponses,
       webhookUrl: forms.webhookUrl,
+      accentColor: forms.accentColor,
+      emailNotifications: forms.emailNotifications,
       createdAt: forms.createdAt,
       userId: forms.userId,
       responseCount: count(formSessions.id),
@@ -161,6 +164,7 @@ export const duplicateForm = async (id: string, userId: string) => {
       welcomeMessage: original.welcomeMessage,
       callToAction: original.callToAction,
       endScreenMessage: original.endScreenMessage,
+      accentColor: original.accentColor,
       userId,
     })
     .returning();
@@ -321,4 +325,13 @@ export const addFormSessionSummary = async (
     })
     .where(eq(formSessions.id, id));
   return formSession;
+};
+
+export const getUserEmail = async (userId: string): Promise<string | null> => {
+  if (!db) return null;
+  const [user] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.id, userId));
+  return user?.email ?? null;
 };

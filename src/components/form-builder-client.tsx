@@ -2,7 +2,7 @@
 
 import { Message } from "@ai-sdk/react";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { MessageCircle, Settings, BarChart3, LineChart, Eye, X } from "lucide-react";
+import { MessageCircle, Settings, BarChart3, LineChart, Eye, X, Share2 } from "lucide-react";
 import FormBuilderChat from "./builder/form-builder-chat";
 import Header from "./builder/header";
 import { useFormSettings } from "@/hooks/use-form-settings";
@@ -13,6 +13,7 @@ import FormAssistantClient from "./form-assistant-client";
 import { createFormSessionAction } from "@/actions/form-assistant";
 import FormResultsPanel from "./results/form-results-panel";
 import FormSummaryPanel from "./results/form-summary-panel";
+import FormSharingPanel from "./sharing/form-sharing-panel";
 
 interface FormBuilderProps {
   formId: string;
@@ -24,6 +25,7 @@ const tabs = [
   { id: "settings" as const, label: "Settings", icon: Settings },
   { id: "results" as const, label: "Results", icon: BarChart3 },
   { id: "overall-summary" as const, label: "Summary", icon: LineChart },
+  { id: "share" as const, label: "Share", icon: Share2 },
 ];
 
 export default function FormBuilder({
@@ -31,7 +33,7 @@ export default function FormBuilder({
   initialMessages,
 }: FormBuilderProps) {
   const [activeTab, setActiveTab] = useState<
-    "chat" | "settings" | "results" | "overall-summary"
+    "chat" | "settings" | "results" | "overall-summary" | "share"
   >("chat");
   const [messages, setMessages] = useState<Message[]>(
     initialMessages || [
@@ -192,6 +194,10 @@ export default function FormBuilder({
             <div className={`absolute inset-0 ${activeTab === "overall-summary" ? "z-10 visible" : "z-0 invisible"}`}>
               <FormSummaryPanel formId={formId} />
             </div>
+
+            <div className={`absolute inset-0 ${activeTab === "share" ? "z-10 visible" : "z-0 invisible"}`}>
+              <FormSharingPanel formId={formId} />
+            </div>
           </div>
         </div>
 
@@ -271,6 +277,7 @@ export default function FormBuilder({
                 )}
                 <button
                   onClick={() => setShowMobilePreview(false)}
+                  aria-label="Close preview"
                   className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <X size={16} />

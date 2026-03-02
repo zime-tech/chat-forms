@@ -1,0 +1,1 @@
+ALTER TABLE "forms" ADD COLUMN "accent_color" text;

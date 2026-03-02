@@ -140,7 +140,8 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
       a.href = url;
       a.download = `responses-${formId.slice(0, 8)}.csv`;
       a.click();
-      URL.revokeObjectURL(url);
+      // Defer revocation so the browser can initiate the download first
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch {
       setError("Failed to export responses");
     }
@@ -260,6 +261,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
               <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
+                aria-label="Search responses"
                 placeholder="Search responses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

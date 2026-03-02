@@ -232,6 +232,12 @@ export async function getFormAnalytics(formId: string): Promise<FormAnalytics> {
 export async function getOverallSummary(formId: string) {
   // requireFormOwnership is called inside getFormSessions
   const sessions = await getFormSessions(formId);
+
+  // No responses yet — skip the AI call entirely
+  if (sessions.length === 0) {
+    return { summary: "", sentiment: "", responseCount: 0 };
+  }
+
   const messages = await getFormMessages(formId);
 
   const prompt = getFormSummaryPrompt(sessions, messages);

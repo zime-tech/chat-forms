@@ -33,7 +33,7 @@ export async function sendMessage(formId: string, message: Message) {
 
   const messages = await getFormMessages(formId, userId);
   const newMessages: ExtendedMessage[] = [...messages, message];
-  await addFormMessages(formId, newMessages, userId);
+  await addFormMessages(formId, [message], userId);
 
   const result = await withAIErrorHandling((signal) =>
     generateObject({

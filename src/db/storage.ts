@@ -12,7 +12,7 @@ import {
 import { db } from "@/db/db";
 import { and, count, desc, eq, gte, lte, max } from "drizzle-orm";
 import { FormAssistantResponse } from "@/actions/form-assistant";
-import { MAX_FORMS_PER_USER } from "@/lib/constants";
+import { MAX_BUILDER_MESSAGES_STORED, MAX_FORMS_PER_USER } from "@/lib/constants";
 
 export const createForm = async (newForm: FormSettingsInsert) => {
   if (!db) {
@@ -294,7 +294,9 @@ export const addFormMessages = async (
   }
 
   const existingMessages = await getFormMessages(id);
-  const updatedMessages = [...existingMessages, ...newMessages];
+  const combined = [...existingMessages, ...newMessages];
+  // Cap stored history to prevent unbounded DB growth; reads already use slice(-20)
+  const updatedMessages = combined.slice(-MAX_BUILDER_MESSAGES_STORED);
 
   const form = await db
     .update(forms)
@@ -329,11 +331,11 @@ export const getFormSessionMessages = async (id: string) => {
   if (!db) {
     throw new Error("Database not initialized");
   }
-  const formSession = await db
-    .select()
+  const [session] = await db
+    .select({ messageHistory: formSessions.messageHistory })
     .from(formSessions)
     .where(eq(formSessions.id, id));
-  return formSession[0]?.messageHistory || [];
+  return session?.messageHistory || [];
 };
 
 export const addFormSessionMessages = async (
@@ -352,6 +354,21 @@ export const addFormSessionMessages = async (
     .set({ messageHistory: updatedMessages })
     .where(eq(formSessions.id, id));
   return formSession;
+};
+
+/** Directly set the full message history for a session without fetching first. */
+export const setFormSessionMessages = async (
+  id: string,
+  messages: ExtendedMessage[]
+) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  return db
+    .update(formSessions)
+    .set({ messageHistory: messages })
+    .where(eq(formSessions.id, id));
 };
 
 export const addFormSessionSummary = async (

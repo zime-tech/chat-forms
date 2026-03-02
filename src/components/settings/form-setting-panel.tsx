@@ -66,7 +66,7 @@ export default function FormSettingsPanel({
       JSON.stringify(settings) !== JSON.stringify(originalSettings);
     setHasChanges(hasUnsavedChanges);
     onHasChanges?.(hasUnsavedChanges);
-  }, [settings, originalSettings]);
+  }, [settings, originalSettings, onHasChanges]);
 
   const handleInputChange = (
     field: keyof FormSettings,

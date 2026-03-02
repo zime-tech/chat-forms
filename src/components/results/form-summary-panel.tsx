@@ -63,10 +63,15 @@ export default function FormSummaryPanel({ formId }: FormSummaryPanelProps) {
     );
   }
 
-  if (!summary) {
+  if (!summary || summary.responseCount === 0) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">No summary data available</p>
+        <div className="text-center">
+          <p className="text-sm font-medium text-foreground">No responses yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The AI summary will appear once people complete your form.
+          </p>
+        </div>
       </div>
     );
   }

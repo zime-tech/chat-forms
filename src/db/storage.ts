@@ -101,6 +101,7 @@ export const getUserForms = async (userId: string) => {
       closedAt: forms.closedAt,
       maxResponses: forms.maxResponses,
       webhookUrl: forms.webhookUrl,
+      accentColor: forms.accentColor,
       createdAt: forms.createdAt,
       userId: forms.userId,
       responseCount: count(formSessions.id),
@@ -161,6 +162,7 @@ export const duplicateForm = async (id: string, userId: string) => {
       welcomeMessage: original.welcomeMessage,
       callToAction: original.callToAction,
       endScreenMessage: original.endScreenMessage,
+      accentColor: original.accentColor,
       userId,
     })
     .returning();

@@ -19,8 +19,22 @@ import {
   CalendarClock,
   Hash,
   Webhook,
+  Palette,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const PRESET_COLORS = [
+  { value: "#4f46e5", label: "Indigo" },
+  { value: "#0ea5e9", label: "Sky" },
+  { value: "#10b981", label: "Emerald" },
+  { value: "#f59e0b", label: "Amber" },
+  { value: "#ef4444", label: "Red" },
+  { value: "#8b5cf6", label: "Violet" },
+  { value: "#ec4899", label: "Pink" },
+  { value: "#14b8a6", label: "Teal" },
+  { value: "#f97316", label: "Orange" },
+  { value: "#1e293b", label: "Slate" },
+];
 
 interface FormSettingsPanelProps {
   formId: string;
@@ -302,6 +316,69 @@ export default function FormSettingsPanel({
                     </button>
                   </div>
                 ))
+              )}
+            </div>
+          </section>
+
+          {/* Branding */}
+          <section className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
+              <Palette size={16} className="text-muted-foreground" />
+              Branding
+            </h2>
+
+            <div className="space-y-3">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Palette size={14} />
+                Accent Color
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {PRESET_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => handleInputChange("accentColor", color.value)}
+                    className={`h-8 w-8 rounded-full border-2 transition-all ${
+                      settings.accentColor === color.value
+                        ? "border-foreground scale-110"
+                        : "border-transparent hover:scale-105"
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    title={color.label}
+                    aria-label={`Set accent color to ${color.label}`}
+                  />
+                ))}
+                <label
+                  className={`relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 transition-all ${
+                    settings.accentColor && !PRESET_COLORS.some((c) => c.value === settings.accentColor)
+                      ? "border-foreground scale-110"
+                      : "border-border hover:scale-105"
+                  }`}
+                  style={{
+                    background:
+                      settings.accentColor && !PRESET_COLORS.some((c) => c.value === settings.accentColor)
+                        ? settings.accentColor
+                        : "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)",
+                  }}
+                  title="Custom color"
+                  aria-label="Pick custom accent color"
+                >
+                  <input
+                    type="color"
+                    value={settings.accentColor || "#4f46e5"}
+                    onChange={(e) => handleInputChange("accentColor", e.target.value)}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
+                </label>
+              </div>
+              {settings.accentColor && (
+                <button
+                  type="button"
+                  onClick={() => handleInputChange("accentColor", null)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Reset to default
+                </button>
               )}
             </div>
           </section>

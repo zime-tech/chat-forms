@@ -5,10 +5,12 @@ import {
   getFormSessions,
   getFormSessionDetails,
   getFormSessionsForExport,
+  getFormAnalytics,
   FormSessionBasic,
   FormSessionDetail,
+  FormAnalytics,
 } from "@/actions/form-results";
-import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X } from "lucide-react";
+import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const SENTIMENT_OPTIONS = ["all", "positive", "neutral", "negative"] as const;
@@ -25,10 +27,21 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
+  const [analytics, setAnalytics] = useState<FormAnalytics | null>(null);
 
   useEffect(() => {
     fetchSessions();
+    fetchAnalytics();
   }, [formId]);
+
+  const fetchAnalytics = async () => {
+    try {
+      const result = await getFormAnalytics(formId);
+      setAnalytics(result);
+    } catch {
+      // Analytics are non-critical, silently fail
+    }
+  };
 
   const filteredSessions = useMemo(() => {
     let filtered = sessions;
@@ -171,6 +184,46 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
           </button>
         </div>
       </div>
+
+      {/* Analytics summary */}
+      {analytics && analytics.totalStarted > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px border-b border-border bg-border">
+          <div className="bg-background px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-0.5">
+              <Users size={10} />
+              <span className="text-[10px] font-medium">Started</span>
+            </div>
+            <p className="text-sm font-semibold text-foreground">{analytics.totalStarted}</p>
+          </div>
+          <div className="bg-background px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-0.5">
+              <BarChart3 size={10} />
+              <span className="text-[10px] font-medium">Completed</span>
+            </div>
+            <p className="text-sm font-semibold text-foreground">{analytics.totalCompleted}</p>
+          </div>
+          <div className="bg-background px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-0.5">
+              <TrendingUp size={10} />
+              <span className="text-[10px] font-medium">Completion</span>
+            </div>
+            <p className="text-sm font-semibold text-foreground">{analytics.completionRate}%</p>
+          </div>
+          <div className="bg-background px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-0.5">
+              <Clock size={10} />
+              <span className="text-[10px] font-medium">Avg. time</span>
+            </div>
+            <p className="text-sm font-semibold text-foreground">
+              {analytics.avgCompletionSeconds
+                ? analytics.avgCompletionSeconds < 60
+                  ? `${analytics.avgCompletionSeconds}s`
+                  : `${Math.round(analytics.avgCompletionSeconds / 60)}m`
+                : "N/A"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* List sidebar */}

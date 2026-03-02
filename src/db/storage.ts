@@ -10,7 +10,7 @@ import {
   users,
 } from "@/db/schema";
 import { db } from "@/db/db";
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte, max } from "drizzle-orm";
 import { FormAssistantResponse } from "@/actions/form-assistant";
 import { MAX_FORMS_PER_USER } from "@/lib/constants";
 
@@ -105,7 +105,8 @@ export const getUserForms = async (userId: string) => {
       emailNotifications: forms.emailNotifications,
       createdAt: forms.createdAt,
       userId: forms.userId,
-      responseCount: count(formSessions.id),
+      responseCount: count(formSessions.completedAt),
+      lastResponseAt: max(formSessions.completedAt),
     })
     .from(forms)
     .leftJoin(formSessions, eq(forms.id, formSessions.formId))

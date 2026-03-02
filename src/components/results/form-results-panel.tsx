@@ -18,6 +18,9 @@ import { formatDistanceToNow } from "date-fns";
 const SENTIMENT_OPTIONS = ["all", "positive", "neutral", "negative"] as const;
 type SentimentFilter = (typeof SENTIMENT_OPTIONS)[number];
 
+const DATE_RANGE_OPTIONS = ["7d", "30d", "90d", "all"] as const;
+type DateRangeFilter = (typeof DATE_RANGE_OPTIONS)[number];
+
 interface FormResultsPanelProps {
   formId: string;
 }
@@ -29,6 +32,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
+  const [dateRange, setDateRange] = useState<DateRangeFilter>("all");
   const [analytics, setAnalytics] = useState<FormAnalytics | null>(null);
   const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
@@ -49,6 +53,15 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const filteredSessions = useMemo(() => {
     let filtered = sessions;
 
+    if (dateRange !== "all") {
+      const days = parseInt(dateRange);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      filtered = filtered.filter(
+        (s) => s.createdAt && new Date(s.createdAt) >= cutoff
+      );
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -65,7 +78,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
     }
 
     return filtered;
-  }, [sessions, searchQuery, sentimentFilter]);
+  }, [sessions, searchQuery, sentimentFilter, dateRange]);
 
   const fetchSessions = async () => {
     setLoading(true);
@@ -277,20 +290,38 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
                 </button>
               )}
             </div>
-            <div className="flex gap-1">
-              {SENTIMENT_OPTIONS.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setSentimentFilter(option)}
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
-                    sentimentFilter === option
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {option === "all" ? "All" : option.charAt(0).toUpperCase() + option.slice(1)}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {DATE_RANGE_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setDateRange(option)}
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                      dateRange === option
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {option === "all" ? "All time" : option}
+                  </button>
+                ))}
+              </div>
+              <div className="w-px h-3 bg-border" />
+              <div className="flex gap-1">
+                {SENTIMENT_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setSentimentFilter(option)}
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                      sentimentFilter === option
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {option === "all" ? "All" : option.charAt(0).toUpperCase() + option.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

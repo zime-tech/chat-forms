@@ -41,12 +41,14 @@ interface FormSettingsPanelProps {
   formId: string;
   formSettings: FormSettings;
   onSettingsUpdate: (settings: FormSettings) => void;
+  onHasChanges?: (hasChanges: boolean) => void;
 }
 
 export default function FormSettingsPanel({
   formId,
   formSettings,
   onSettingsUpdate,
+  onHasChanges,
 }: FormSettingsPanelProps) {
   const [settings, setSettings] = useState<FormSettings>(formSettings);
   const [originalSettings, setOriginalSettings] =
@@ -63,6 +65,7 @@ export default function FormSettingsPanel({
     const hasUnsavedChanges =
       JSON.stringify(settings) !== JSON.stringify(originalSettings);
     setHasChanges(hasUnsavedChanges);
+    onHasChanges?.(hasUnsavedChanges);
   }, [settings, originalSettings]);
 
   const handleInputChange = (
@@ -174,6 +177,7 @@ export default function FormSettingsPanel({
               <FieldGroup label="Form Title" icon={Type}>
                 <input
                   type="text"
+                  maxLength={100}
                   value={settings.title}
                   onChange={(e) => handleInputChange("title", e.target.value)}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
@@ -184,6 +188,7 @@ export default function FormSettingsPanel({
               <FieldGroup label="Completion Time" icon={Clock}>
                 <input
                   type="text"
+                  maxLength={30}
                   value={settings.expectedCompletionTime}
                   onChange={(e) =>
                     handleInputChange("expectedCompletionTime", e.target.value)
@@ -207,6 +212,7 @@ export default function FormSettingsPanel({
                 <FieldGroup label="Tone" icon={MessageCircle}>
                   <input
                     type="text"
+                    maxLength={50}
                     value={settings.tone}
                     onChange={(e) => handleInputChange("tone", e.target.value)}
                     className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
@@ -217,6 +223,7 @@ export default function FormSettingsPanel({
                 <FieldGroup label="Persona" icon={Users}>
                   <input
                     type="text"
+                    maxLength={100}
                     value={settings.persona}
                     onChange={(e) =>
                       handleInputChange("persona", e.target.value)
@@ -229,6 +236,7 @@ export default function FormSettingsPanel({
 
               <FieldGroup label="Target Audience" icon={Users}>
                 <textarea
+                  maxLength={500}
                   value={settings.targetAudience}
                   onChange={(e) =>
                     handleInputChange("targetAudience", e.target.value)
@@ -236,10 +244,12 @@ export default function FormSettingsPanel({
                   className="min-h-20 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
                   placeholder="Describe your target audience"
                 />
+                <CharCount value={settings.targetAudience} max={500} />
               </FieldGroup>
 
               <FieldGroup label="About Business" icon={Briefcase}>
                 <textarea
+                  maxLength={500}
                   value={settings.aboutBusiness}
                   onChange={(e) =>
                     handleInputChange("aboutBusiness", e.target.value)
@@ -247,6 +257,7 @@ export default function FormSettingsPanel({
                   className="min-h-20 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
                   placeholder="Tell us about your business"
                 />
+                <CharCount value={settings.aboutBusiness} max={500} />
               </FieldGroup>
             </div>
           </section>
@@ -261,6 +272,7 @@ export default function FormSettingsPanel({
             <div className="space-y-4">
               <FieldGroup label="Welcome Message" icon={Hand}>
                 <textarea
+                  maxLength={500}
                   value={settings.welcomeMessage}
                   onChange={(e) =>
                     handleInputChange("welcomeMessage", e.target.value)
@@ -268,11 +280,13 @@ export default function FormSettingsPanel({
                   className="min-h-20 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
                   placeholder="Message shown at the start"
                 />
+                <CharCount value={settings.welcomeMessage} max={500} />
               </FieldGroup>
 
               <FieldGroup label="Call To Action" icon={Send}>
                 <input
                   type="text"
+                  maxLength={50}
                   value={settings.callToAction}
                   onChange={(e) =>
                     handleInputChange("callToAction", e.target.value)
@@ -284,6 +298,7 @@ export default function FormSettingsPanel({
 
               <FieldGroup label="End Screen Message" icon={CheckCircle}>
                 <textarea
+                  maxLength={500}
                   value={settings.endScreenMessage}
                   onChange={(e) =>
                     handleInputChange("endScreenMessage", e.target.value)
@@ -291,6 +306,7 @@ export default function FormSettingsPanel({
                   className="min-h-20 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
                   placeholder="Message shown after completing the form"
                 />
+                <CharCount value={settings.endScreenMessage} max={500} />
               </FieldGroup>
             </div>
           </section>
@@ -613,5 +629,15 @@ function FieldGroup({
       </label>
       {children}
     </div>
+  );
+}
+
+function CharCount({ value, max }: { value: string; max: number }) {
+  const len = value?.length ?? 0;
+  if (len === 0) return null;
+  return (
+    <p className={`text-right text-[10px] ${len >= max ? "text-destructive" : "text-muted-foreground"}`}>
+      {len}/{max}
+    </p>
   );
 }

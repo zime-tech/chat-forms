@@ -279,6 +279,19 @@ export default function DashboardClientPage({
                       Limit reached
                     </span>
                   )}
+                  {form.closedAt && form.status !== "closed" && (() => {
+                    const closedAt = new Date(form.closedAt);
+                    const now = new Date();
+                    const daysLeft = Math.ceil((closedAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    if (daysLeft > 0 && daysLeft <= 7) {
+                      return (
+                        <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                          Closing in {daysLeft}d
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1 shrink-0">

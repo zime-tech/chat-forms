@@ -32,9 +32,16 @@ export default function FormBuilder({
   formId,
   initialMessages,
 }: FormBuilderProps) {
+  const getInitialTab = (): "chat" | "settings" | "results" | "overall-summary" | "share" => {
+    if (typeof window === "undefined") return "chat";
+    const hash = window.location.hash.replace("#", "");
+    const valid = ["chat", "settings", "results", "overall-summary", "share"];
+    return valid.includes(hash) ? (hash as typeof activeTab) : "chat";
+  };
+
   const [activeTab, setActiveTab] = useState<
     "chat" | "settings" | "results" | "overall-summary" | "share"
-  >("chat");
+  >(getInitialTab);
   const [messages, setMessages] = useState<Message[]>(
     initialMessages || [
       {
@@ -71,7 +78,24 @@ export default function FormBuilder({
   const [copied, setCopied] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [hasUnsavedSettings, setHasUnsavedSettings] = useState(false);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTabChange = (tabId: typeof activeTab) => {
+    setActiveTab(tabId);
+    window.history.replaceState(null, "", `#${tabId}`);
+  };
+
+  // Warn before leaving with unsaved settings
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedSettings) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasUnsavedSettings]);
 
   useEffect(() => {
     if (copied) {
@@ -131,8 +155,9 @@ export default function FormBuilder({
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 disabled={tab.id === "settings" && !formSettings}
+                title={tab.id === "settings" && !formSettings ? "Chat with the AI to generate form settings first" : undefined}
                 className={`flex items-center gap-1.5 px-3 md:px-4 py-2.5 text-xs font-medium transition-colors border-b-2 ${
                   activeTab === tab.id
                     ? "border-accent text-accent"
@@ -167,7 +192,7 @@ export default function FormBuilder({
                 formSettingsUpdated={formSettingsUpdated}
                 setFormSettingsUpdated={setFormSettingsUpdated}
                 onMessagesUpdate={handleMessagesUpdate}
-                onDetailedView={() => setActiveTab("settings")}
+                onDetailedView={() => handleTabChange("settings")}
               />
             </div>
 
@@ -179,6 +204,7 @@ export default function FormBuilder({
                   onSettingsUpdate={(newSettings: FormSettings) =>
                     updateFormSettings(newSettings, "manual-update")
                   }
+                  onHasChanges={setHasUnsavedSettings}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground text-sm">

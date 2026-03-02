@@ -78,6 +78,19 @@ export const getForm = async (id: string) => {
   return form[0];
 };
 
+/** Lightweight read — only the fields needed for the status-toggle action. */
+export const getFormStatusFields = async (id: string) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const [form] = await db
+    .select({ status: forms.status, closedAt: forms.closedAt, userId: forms.userId })
+    .from(forms)
+    .where(eq(forms.id, id));
+  return form;
+};
+
 export const getUserForms = async (userId: string) => {
   if (!db) {
     throw new Error("Database not initialized");
@@ -190,13 +203,14 @@ export const getFormResponseCount = async (formId: string) => {
 export type FormClosedReason = "closed" | "scheduled" | "max_responses";
 
 export const isFormAcceptingResponses = async (
-  formId: string
+  formId: string,
+  preloadedForm?: Awaited<ReturnType<typeof getForm>>
 ): Promise<{ accepting: boolean; reason?: FormClosedReason }> => {
   if (!db) {
     throw new Error("Database not initialized");
   }
 
-  const form = await getForm(formId);
+  const form = preloadedForm ?? await getForm(formId);
   if (!form) return { accepting: false, reason: "closed" };
 
   if (form.status === "closed") return { accepting: false, reason: "closed" };
@@ -217,7 +231,7 @@ export const isFormAcceptingResponses = async (
 
 export const updateForm = async (
   id: string,
-  updatedForm: FormSettingsInsert,
+  updatedForm: Partial<FormSettingsInsert>,
   userId?: string
 ) => {
   if (!db) {

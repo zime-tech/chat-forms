@@ -15,20 +15,23 @@ interface UseFormSettingsResult {
 
 export function useFormSettings(
   messages: Message[],
-  formId: string
+  formId: string,
+  initialSettings?: FormSettings | null
 ): UseFormSettingsResult {
-  const [formSettings, setFormSettings] = useState<FormSettings | null>(null);
+  const [formSettings, setFormSettings] = useState<FormSettings | null>(
+    initialSettings ?? null
+  );
   const [lastFormUpdateMessageId, setLastFormUpdateMessageId] = useState<
     string | null
   >(null);
   const [formSettingsUpdated, setFormSettingsUpdated] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+  const [initialized, setInitialized] = useState(!!initialSettings);
 
   useEffect(() => {
     if (!initialized) {
       const fetchFormSettings = async () => {
-        const formSettings = await getForm(formId);
-        setFormSettings(formSettings as FormSettings);
+        const fs = await getForm(formId);
+        setFormSettings(fs as FormSettings);
         setInitialized(true);
       };
       fetchFormSettings();

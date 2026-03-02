@@ -5,6 +5,7 @@ import { getForm, getFormResponseCount } from "@/db/storage";
 import { getSession } from "auth";
 import { redirect } from "next/navigation";
 import { INITIAL_BUILDER_MESSAGE } from "@/lib/constants";
+import { FormSettings } from "@/components/builder/types";
 
 // Deduplicate getForm calls within the same request (generateMetadata + page body)
 const getFormCached = cache(getForm);
@@ -62,6 +63,7 @@ export default async function FormBuilderPage({
       initialMessages={messages}
       createdAt={form?.createdAt?.toISOString()}
       responseCount={responseCount}
+      initialFormSettings={form as unknown as FormSettings}
     />
   );
 }

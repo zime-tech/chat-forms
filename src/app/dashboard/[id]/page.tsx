@@ -14,7 +14,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const form = await getForm(id);
-  return { title: form?.title || "Form Builder" };
+  const title = form?.title || "Form Builder";
+  return {
+    title,
+    description: form ? `Build and manage your "${title}" conversational form.` : undefined,
+    robots: { index: false },
+  };
 }
 
 export default async function FormBuilderPage({

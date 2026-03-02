@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Create Form",
+  robots: { index: false },
 };
 
 export default async function NewFormPage() {

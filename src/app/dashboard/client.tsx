@@ -27,7 +27,7 @@ import { MAX_FORMS_PER_USER } from "@/lib/constants";
 
 const STORAGE_KEY = "dashboard_response_counts";
 
-type FormWithCount = FormSettings & { responseCount: number };
+type FormWithCount = FormSettings & { responseCount: number; lastResponseAt: Date | null };
 
 export default function DashboardClientPage({
   forms,
@@ -333,13 +333,21 @@ export default function DashboardClientPage({
                       {form.expectedCompletionTime}
                     </span>
                   )}
-                  {form.createdAt && (
+                  {form.lastResponseAt ? (
                     <span className="shrink-0">
+                      Last response{" "}
+                      {formatDistanceToNow(new Date(form.lastResponseAt), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                  ) : form.createdAt ? (
+                    <span className="shrink-0">
+                      Created{" "}
                       {formatDistanceToNow(new Date(form.createdAt), {
                         addSuffix: true,
                       })}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </div>
 

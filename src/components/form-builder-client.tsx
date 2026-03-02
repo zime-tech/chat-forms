@@ -1,8 +1,8 @@
 "use client";
 
 import { Message } from "@ai-sdk/react";
-import { useState, useEffect, useCallback } from "react";
-import { BarChart, LineChart, MessageCircle, Settings } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { MessageCircle, Settings, BarChart3, LineChart, Eye, X } from "lucide-react";
 import FormBuilderChat from "./builder/form-builder-chat";
 import Header from "./builder/header";
 import { useFormSettings } from "@/hooks/use-form-settings";
@@ -10,7 +10,7 @@ import FormSettingsPanel from "./settings/form-setting-panel";
 import { FormSettings } from "./builder/types";
 import { Toaster } from "sonner";
 import FormAssistantClient from "./form-assistant-client";
-import { createFormSession } from "@/db/storage";
+import { createFormSessionAction } from "@/actions/form-assistant";
 import FormResultsPanel from "./results/form-results-panel";
 import FormSummaryPanel from "./results/form-summary-panel";
 
@@ -18,6 +18,13 @@ interface FormBuilderProps {
   formId: string;
   initialMessages?: Message[];
 }
+
+const tabs = [
+  { id: "chat" as const, label: "Chat", icon: MessageCircle },
+  { id: "settings" as const, label: "Settings", icon: Settings },
+  { id: "results" as const, label: "Results", icon: BarChart3 },
+  { id: "overall-summary" as const, label: "Summary", icon: LineChart },
+];
 
 export default function FormBuilder({
   formId,
@@ -36,21 +43,13 @@ export default function FormBuilder({
       },
     ]
   );
-  const [formAssistantSessionId, setFormAssistantSessionId] = useState<
-    string | null
-  >(null);
+  const [formAssistantSessionId, setFormAssistantSessionId] = useState<string | null>(null);
 
-  const resetSession = () => {
-    createFormSession({ formId }).then((newSession) => {
+  const resetSession = useCallback(() => {
+    createFormSessionAction(formId).then((newSession) => {
       setFormAssistantSessionId(newSession.id);
     });
-  };
-
-  useEffect(() => {
-    if (!formAssistantSessionId && formId) {
-      resetSession();
-    }
-  }, [formAssistantSessionId, formId]);
+  }, [formId]);
 
   const {
     formSettings,
@@ -60,148 +59,104 @@ export default function FormBuilder({
     setFormSettingsUpdated,
   } = useFormSettings(messages, formId);
 
+  // Create a preview session only when form settings first become available
   useEffect(() => {
-    if (formSettings && formId) {
-      console.log("resetting session");
-      console.log(formSettings);
+    if (formSettings && !formAssistantSessionId) {
       resetSession();
     }
-  }, [formSettings, formId]);
+  }, [formSettings, formAssistantSessionId, resetSession]);
 
-  const [showSharePopup, setShowSharePopup] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reset copy state after 2 seconds
   useEffect(() => {
     if (copied) {
-      const timer = setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      const timer = setTimeout(() => setCopied(false), 2000);
       return () => clearTimeout(timer);
     }
   }, [copied]);
 
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    };
+  }, []);
+
   const handleCopyLink = () => {
-    const formLink = `${window.location.origin}/forms/${formId}`;
-    navigator.clipboard.writeText(formLink);
+    navigator.clipboard.writeText(`${window.location.origin}/forms/${formId}`);
     setCopied(true);
   };
 
-  // Handler to update messages from the chat component
   const handleMessagesUpdate = (newMessages: Message[]) => {
     setMessages(newMessages);
   };
 
   const onResetClick = () => {
-    if (
-      confirm(
-        "Are you sure you want to reset the form session? This will clear all current progress."
-      )
-    ) {
-      // clear the session
-      setFormAssistantSessionId(null);
-
-      // generate a new session id
-      setTimeout(() => {
-        resetSession();
-      }, 10);
-    }
+    setShowResetConfirm(true);
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    resetTimerRef.current = setTimeout(() => setShowResetConfirm(false), 5000);
   };
 
-  const getLeftSideWidth = useCallback(() => {
-    if (activeTab === "results") {
-      return "w-[60%]";
-    }
-    return "w-[40%]";
-  }, [activeTab]);
+  const confirmReset = () => {
+    setShowResetConfirm(false);
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    setFormAssistantSessionId(null);
+    setTimeout(() => resetSession(), 10);
+  };
 
-  const getRightSideWidth = useCallback(() => {
-    if (activeTab === "results") {
-      return "w-[40%]";
-    }
-    return "w-[60%]";
-  }, [activeTab]);
-
-  // Determine layout widths based on active tab
-  const leftSideWidth = getLeftSideWidth();
-  const rightSideWidth = getRightSideWidth();
+  const cancelReset = () => {
+    setShowResetConfirm(false);
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+  };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      {/* Toast notifications */}
+    <div className="flex flex-col h-screen bg-background">
       <Toaster position="top-right" richColors closeButton />
 
-      {/* Header */}
       <Header
         formId={formId}
-        showSharePopup={showSharePopup}
-        setShowSharePopup={setShowSharePopup}
         handleCopyLink={handleCopyLink}
         copied={copied}
       />
 
-      {/* Main Split Layout: Dynamic based on active tab */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Side - Dynamic width */}
-        <div
-          className={`${leftSideWidth} flex flex-col border-r border-white/10 overflow-hidden transition-all duration-300`}
-        >
-          {/* Tab Navigation */}
-          <div className="flex border-b border-white/10 bg-gray-900 shrink-0">
-            <button
-              onClick={() => setActiveTab("chat")}
-              className={`px-4 py-3 flex items-center gap-2 text-sm font-medium transition-colors ${
-                activeTab === "chat"
-                  ? "text-white border-b-2 border-purple-500"
-                  : "text-white/60 hover:text-white/80"
-              }`}
-            >
-              <MessageCircle size={16} />
-              Chat
-            </button>
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`px-4 py-3 flex items-center gap-2 text-sm font-medium transition-colors ${
-                activeTab === "settings"
-                  ? "text-white border-b-2 border-purple-500"
-                  : "text-white/60 hover:text-white/80"
-              }`}
-              disabled={!formSettings}
-            >
-              <Settings size={16} />
-              Settings
-            </button>
-            <button
-              onClick={() => setActiveTab("results")}
-              className={`px-4 py-3 flex items-center gap-2 text-sm font-medium transition-colors ${
-                activeTab === "results"
-                  ? "text-white border-b-2 border-purple-500"
-                  : "text-white/60 hover:text-white/80"
-              }`}
-            >
-              <BarChart size={16} />
-              Results
-            </button>
-            <button
-              onClick={() => setActiveTab("overall-summary")}
-              className={`px-4 py-3 flex items-center gap-2 text-sm font-medium transition-colors ${
-                activeTab === "overall-summary"
-                  ? "text-white border-b-2 border-purple-500"
-                  : "text-white/60 hover:text-white/80"
-              }`}
-            >
-              <LineChart size={16} />
-              Overall Summary
-            </button>
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Left panel — full width on mobile, side panel on desktop */}
+        <div className={`flex flex-col border-r border-border overflow-hidden transition-all duration-200 w-full ${activeTab === "results" ? "md:w-[55%]" : "md:w-[45%]"}`}>
+          {/* Tabs */}
+          <div className="flex border-b border-border bg-surface shrink-0">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                disabled={tab.id === "settings" && !formSettings}
+                className={`flex items-center gap-1.5 px-3 md:px-4 py-2.5 text-xs font-medium transition-colors border-b-2 ${
+                  activeTab === tab.id
+                    ? "border-accent text-accent"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                } disabled:opacity-40 disabled:cursor-not-allowed`}
+              >
+                <tab.icon size={14} />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+
+            {/* Mobile preview toggle */}
+            {formAssistantSessionId && formSettings && (
+              <button
+                onClick={() => setShowMobilePreview(true)}
+                className="ml-auto flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors md:hidden"
+              >
+                <Eye size={14} />
+                <span className="hidden sm:inline">Preview</span>
+              </button>
+            )}
           </div>
 
-          {/* Tab Content */}
-          <div className="flex-1 relative h-full overflow-hidden">
-            <div
-              className={`absolute inset-0 ${
-                activeTab === "chat" ? "z-10 visible" : "z-0 invisible"
-              }`}
-            >
+          {/* Tab content */}
+          <div className="flex-1 relative overflow-hidden">
+            <div className={`absolute inset-0 ${activeTab === "chat" ? "z-10 visible" : "z-0 invisible"}`}>
               <FormBuilderChat
                 formId={formId}
                 initialMessages={initialMessages}
@@ -214,11 +169,7 @@ export default function FormBuilder({
               />
             </div>
 
-            <div
-              className={`absolute inset-0 ${
-                activeTab === "settings" ? "z-10 visible" : "z-0 invisible"
-              }`}
-            >
+            <div className={`absolute inset-0 ${activeTab === "settings" ? "z-10 visible" : "z-0 invisible"}`}>
               {formSettings ? (
                 <FormSettingsPanel
                   formId={formId}
@@ -228,72 +179,120 @@ export default function FormBuilder({
                   }
                 />
               ) : (
-                <div className="h-full flex items-center justify-center text-white/70">
-                  No form settings available yet. Use the chat to create a form
-                  first.
+                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                  Chat with the AI to generate form settings first.
                 </div>
               )}
             </div>
 
-            <div
-              className={`absolute inset-0 ${
-                activeTab === "results" ? "z-10 visible" : "z-0 invisible"
-              }`}
-            >
+            <div className={`absolute inset-0 ${activeTab === "results" ? "z-10 visible" : "z-0 invisible"}`}>
               <FormResultsPanel formId={formId} />
             </div>
 
-            <div
-              className={`absolute inset-0 ${
-                activeTab === "overall-summary"
-                  ? "z-10 visible"
-                  : "z-0 invisible"
-              }`}
-            >
+            <div className={`absolute inset-0 ${activeTab === "overall-summary" ? "z-10 visible" : "z-0 invisible"}`}>
               <FormSummaryPanel formId={formId} />
             </div>
           </div>
         </div>
 
-        {/* Right Side - Dynamic width */}
-        <div
-          className={`${rightSideWidth} overflow-hidden relative transition-all duration-300`}
-        >
+        {/* Right panel - form preview (hidden on mobile, shown as overlay) */}
+        <div className={`hidden md:block overflow-hidden relative transition-all duration-200 ${activeTab === "results" ? "w-[45%]" : "w-[55%]"}`}>
           {formAssistantSessionId && formSettings && (
-            <div className="absolute top-6 right-6 z-20">
-              <button
-                onClick={onResetClick}
-                className="group flex items-center space-x-1 bg-black/40 hover:bg-black/60 text-white/70 hover:text-white/90 px-3 py-1.5 rounded-full border border-white/10 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-purple-500/20"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transform rotate-45 group-hover:rotate-[405deg] transition-transform duration-500"
+            <div className="absolute top-3 right-3 z-20">
+              {showResetConfirm ? (
+                <div className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs">
+                  <span className="text-muted-foreground">Reset?</span>
+                  <button
+                    onClick={confirmReset}
+                    className="rounded px-1.5 py-0.5 font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={cancelReset}
+                    className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-surface-hover transition-colors"
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={onResetClick}
+                  className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors"
                 >
-                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                  <path d="M3 3v5h5"></path>
-                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
-                  <path d="M16 21h5v-5"></path>
-                </svg>
-                <span className="text-xs font-medium">Reset Session</span>
-              </button>
+                  Reset preview
+                </button>
+              )}
             </div>
           )}
-          {formAssistantSessionId && formSettings && (
+          {formAssistantSessionId && formSettings ? (
             <FormAssistantClient
               sessionId={formAssistantSessionId}
               formId={formId}
               formSettings={formSettings}
+              hideHeader
             />
+          ) : (
+            <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+              Form preview will appear here once settings are generated.
+            </div>
           )}
         </div>
+
+        {/* Mobile preview overlay */}
+        {showMobilePreview && (
+          <div className="absolute inset-0 z-30 bg-background md:hidden">
+            <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-2 shrink-0">
+              <span className="text-xs font-medium text-foreground">Form Preview</span>
+              <div className="flex items-center gap-2">
+                {showResetConfirm ? (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-muted-foreground">Reset?</span>
+                    <button
+                      onClick={confirmReset}
+                      className="rounded px-1.5 py-0.5 font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={cancelReset}
+                      className="rounded px-1.5 py-0.5 font-medium text-muted-foreground hover:bg-surface-hover transition-colors"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={onResetClick}
+                    className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowMobilePreview(false)}
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="h-[calc(100%-41px)]">
+              {formAssistantSessionId && formSettings ? (
+                <FormAssistantClient
+                  sessionId={formAssistantSessionId}
+                  formId={formId}
+                  formSettings={formSettings}
+                  hideHeader
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                  Form preview will appear here once settings are generated.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

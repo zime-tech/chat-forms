@@ -19,21 +19,18 @@ export default async function FormBuilderPage({
 
   let formId = id;
   if (id === "new") {
-    let newFormId = "";
     try {
       const [newForm] = await createForm({
         title: "New Form",
         userId: session?.user?.id as string,
       });
-      newFormId = newForm.id;
+      redirect(`/dashboard/${newForm.id}`);
     } catch (error) {
-      console.error(error);
-    } finally {
-      if (newFormId && newFormId !== "") {
-        redirect(`/dashboard/${newFormId}`);
-      } else {
-        redirect("/dashboard");
+      if (error instanceof Error && error.message.includes("maximum")) {
+        redirect("/dashboard?error=limit");
       }
+      // Re-throw redirect errors (Next.js redirect throws internally)
+      throw error;
     }
   }
 

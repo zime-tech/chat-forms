@@ -88,6 +88,37 @@ export async function getFormSessionDetails(
 }
 
 /**
+ * Gets all form sessions for CSV export (includes all fields)
+ */
+export async function getFormSessionsForExport(
+  formId: string
+): Promise<FormSessionBasic[]> {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  const sessions = await db
+    .select({
+      id: formSessions.id,
+      formId: formSessions.formId,
+      quickSummary: formSessions.quickSummary,
+      detailedSummary: formSessions.detailedSummary,
+      overallSentiment: formSessions.overallSentiment,
+      createdAt: formSessions.createdAt,
+    })
+    .from(formSessions)
+    .where(
+      and(
+        eq(formSessions.formId, formId),
+        isNotNull(formSessions.quickSummary)
+      )
+    )
+    .orderBy(desc(formSessions.createdAt));
+
+  return sessions;
+}
+
+/**
  * Get overall summary of all form sessions
  */
 export async function getOverallSummary(formId: string) {

@@ -43,6 +43,11 @@ const formatMessageContent = (
   return message.content;
 };
 
+export async function createFormSessionAction(formId: string) {
+  const { createFormSession } = await import("@/db/storage");
+  return createFormSession({ formId, messageHistory: [] });
+}
+
 export async function sendMessage(
   formId: string,
   sessionId: string,

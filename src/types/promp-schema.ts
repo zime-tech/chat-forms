@@ -23,6 +23,7 @@ export const formResponseSchema = z.object({
 export const formAssistantResponseSchema = z.object({
   responseToUser: z.string(),
   formCompleted: z.boolean(),
+  progressPercentage: z.number().min(0).max(100),
   summary: z
     .object({
       quickSummary: z.string(),

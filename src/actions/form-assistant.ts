@@ -9,10 +9,10 @@ import {
 } from "@/types/promp-schema";
 import { formAssistantSystemPrompt } from "@/system-prompts/assistant";
 import {
-  addFormSessionMessages,
   addFormSessionSummary,
   getForm,
   getFormSessionMessages,
+  setFormSessionMessages,
 } from "@/db/storage";
 import { ExtendedMessage } from "@/db/schema";
 import { trackEvent } from "@/lib/jitsu-server";
@@ -82,8 +82,6 @@ export async function sendMessage(
   }
   const newMessages: ExtendedMessage[] = [...messages, message];
 
-  await addFormSessionMessages(sessionId, [message]);
-
   const form = await getForm(formId);
   const formSettings: FormSettings = {
     title: form.title,
@@ -139,8 +137,9 @@ export async function sendMessage(
     saveSummary = true;
   }
 
+  // Save all messages in one write instead of two separate reads + writes
   await Promise.all([
-    addFormSessionMessages(sessionId, [assistantMessage]),
+    setFormSessionMessages(sessionId, newMessages),
     saveSummary && addFormSessionSummary(sessionId, result.object.summary),
     trackEvent("form-assistant-message", {
       formId,

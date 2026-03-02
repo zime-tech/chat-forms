@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface HeaderProps {
   formId: string;
   formTitle?: string;
+  createdAt?: string;
   handleCopyLink: () => void;
   copied: boolean;
 }
@@ -13,6 +14,7 @@ interface HeaderProps {
 export default function Header({
   formId,
   formTitle,
+  createdAt,
   handleCopyLink,
   copied,
 }: HeaderProps) {
@@ -31,6 +33,11 @@ export default function Header({
         <span className="text-sm font-medium text-foreground truncate max-w-[200px] sm:max-w-none">
           {formTitle || "Form Builder"}
         </span>
+        {createdAt && (
+          <span className="hidden sm:inline text-xs text-muted-foreground">
+            Created {new Date(createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

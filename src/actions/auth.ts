@@ -7,7 +7,13 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
+import { rateLimit } from "@/lib/rate-limit";
+
+async function getClientIp(): Promise<string> {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+}
 
 // Login schema
 const loginSchema = z.object({
@@ -59,6 +65,13 @@ export async function login(
 ): Promise<LoginFormState> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+
+  // Rate limit: 5 login attempts per minute per IP
+  const ip = await getClientIp();
+  const rl = rateLimit(`login:${ip}`, { maxRequests: 5, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return { error: "Too many login attempts. Please wait a moment and try again." };
+  }
 
   // Validate input
   const validatedFields = loginSchema.safeParse({
@@ -113,6 +126,13 @@ export async function register(
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+
+  // Rate limit: 3 registrations per minute per IP
+  const ip = await getClientIp();
+  const rl = rateLimit(`register:${ip}`, { maxRequests: 3, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return { error: "Too many registration attempts. Please wait a moment and try again." };
+  }
 
   // Validate input
   const validatedFields = registerSchema.safeParse({

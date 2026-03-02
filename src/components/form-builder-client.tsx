@@ -18,6 +18,7 @@ import FormSharingPanel from "./sharing/form-sharing-panel";
 interface FormBuilderProps {
   formId: string;
   initialMessages?: Message[];
+  createdAt?: string;
 }
 
 const tabs = [
@@ -31,6 +32,7 @@ const tabs = [
 export default function FormBuilder({
   formId,
   initialMessages,
+  createdAt,
 }: FormBuilderProps) {
   const getInitialTab = (): "chat" | "settings" | "results" | "overall-summary" | "share" => {
     if (typeof window === "undefined") return "chat";
@@ -144,6 +146,7 @@ export default function FormBuilder({
       <Header
         formId={formId}
         formTitle={formSettings?.title}
+        createdAt={createdAt}
         handleCopyLink={handleCopyLink}
         copied={copied}
       />

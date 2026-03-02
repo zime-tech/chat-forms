@@ -50,7 +50,7 @@ test.describe("Form Submission (Public)", () => {
     }
 
     // Should see the form header
-    await expect(page.locator("text=Chat Forms")).toBeVisible();
+    await expect(page.locator("header >> text=Chat Forms")).toBeVisible();
 
     // Should see the form title or closed message (form may be closed)
     const formTitle = page.locator("p:text('Customer Satisfaction Survey')");

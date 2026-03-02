@@ -2,8 +2,13 @@ import { getSession } from "auth";
 import { redirect } from "next/navigation";
 import { getUserForms } from "@/db/storage";
 import TemplatePickerClient from "./client";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Create Form",
+};
 
 const MAX_FORMS = 10;
 

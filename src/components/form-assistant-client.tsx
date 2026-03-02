@@ -347,6 +347,21 @@ export default function FormAssistantClient({
           )}
         </div>
       </div>
+
+      {/* Powered-by footer — only on standalone public form pages */}
+      {!hideHeader && (
+        <footer className="border-t border-border bg-surface px-6 py-3 text-center shrink-0">
+          <p className="text-[10px] text-muted-foreground">
+            Powered by{" "}
+            <a
+              href="/"
+              className="font-medium text-accent hover:underline"
+            >
+              Chat Forms
+            </a>
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import LoginForm from "./login-form";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "auth";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Sign In",
+};
 
 export default async function LoginPage() {
   const session = await getServerSession(authOptions);

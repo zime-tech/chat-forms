@@ -3,17 +3,21 @@
 import { getOverallSummary } from "@/actions/form-results";
 import { RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 import { formOverallSummarySchema } from "@/types/promp-schema";
 import { z } from "zod";
+
+type SummaryData = z.infer<typeof formOverallSummarySchema> & { responseCount: number };
 
 interface FormSummaryPanelProps {
   formId: string;
 }
 
 export default function FormSummaryPanel({ formId }: FormSummaryPanelProps) {
-  const [summary, setSummary] = useState<z.infer<typeof formOverallSummarySchema> | null>(null);
+  const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [generatedAt, setGeneratedAt] = useState<Date | null>(null);
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -21,6 +25,7 @@ export default function FormSummaryPanel({ formId }: FormSummaryPanelProps) {
     try {
       const result = await getOverallSummary(formId);
       setSummary(result);
+      setGeneratedAt(new Date());
     } catch {
       setError("Failed to generate summary");
     } finally {
@@ -69,7 +74,15 @@ export default function FormSummaryPanel({ formId }: FormSummaryPanelProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-        <span className="text-xs font-medium text-foreground">AI Summary</span>
+        <div>
+          <span className="text-xs font-medium text-foreground">AI Summary</span>
+          {summary && generatedAt && (
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Based on {summary.responseCount} {summary.responseCount === 1 ? "response" : "responses"}
+              {" · "}generated {formatDistanceToNow(generatedAt, { addSuffix: true })}
+            </p>
+          )}
+        </div>
         <button
           onClick={fetchSummary}
           disabled={loading}

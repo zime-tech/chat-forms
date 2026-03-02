@@ -209,7 +209,7 @@ export async function getOverallSummary(formId: string) {
     })
   );
 
-  return result.object;
+  return { ...result.object, responseCount: sessions.length };
 }
 
 /**

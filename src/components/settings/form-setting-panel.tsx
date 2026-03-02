@@ -5,7 +5,6 @@ import {
   Plus,
   Trash2,
   AlertTriangle,
-  Info,
   Type,
   Clock,
   MessageCircle,
@@ -15,9 +14,9 @@ import {
   Send,
   CheckCircle,
   ListOrdered,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import BackgroundEffects from "../builder/background-effects";
 
 interface FormSettingsPanelProps {
   formId: string;
@@ -36,13 +35,11 @@ export default function FormSettingsPanel({
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Update settings when props change
   useEffect(() => {
     setSettings(formSettings);
     setOriginalSettings(formSettings);
   }, [formSettings]);
 
-  // Check for changes
   useEffect(() => {
     const hasUnsavedChanges =
       JSON.stringify(settings) !== JSON.stringify(originalSettings);
@@ -95,363 +92,269 @@ export default function FormSettingsPanel({
   };
 
   return (
-    <div className="relative h-full bg-gradient-to-br from-gray-900 to-black text-white">
-      {/* Background Effects - lowest z-index */}
-      <div className="absolute inset-0 z-0">
-        <BackgroundEffects />
-      </div>
+    <div className="h-full overflow-y-auto bg-background">
+      <div className="mx-auto max-w-3xl p-6 pb-28">
+        <header className="mb-6">
+          <h1 className="text-lg font-semibold text-foreground">
+            Form Settings
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Customize your form&apos;s appearance and behavior
+          </p>
+        </header>
 
-      {/* Content - Ensure its z-index is appropriate */}
-      <div className="relative z-[5] h-full overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        <div className="max-w-4xl mx-auto p-6 pb-28">
-          <header className="mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Form Settings
-            </h1>
-            <p className="text-gray-400 flex items-center">
-              <Info size={16} className="mr-2 text-purple-400" />
-              Customize your form's appearance and behavior
-            </p>
-          </header>
+        {hasChanges && (
+          <div className="mb-6 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+            <AlertTriangle size={16} className="shrink-0" />
+            <span>You have unsaved changes.</span>
+          </div>
+        )}
 
-          {hasChanges && (
-            <div className="bg-amber-900/40 border border-amber-700/50 text-amber-200 px-4 py-3 rounded-md mb-6 flex items-center shadow-md">
-              <AlertTriangle size={18} className="mr-2 flex-shrink-0" />
-              <span>
-                You have unsaved changes. Save or discard them before leaving
-                this page.
-              </span>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <section className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
+              <Type size={16} className="text-muted-foreground" />
+              Basic Information
+            </h2>
+
+            <div className="space-y-4">
+              <FieldGroup label="Form Title" icon={Type}>
+                <input
+                  type="text"
+                  value={settings.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="Enter form title"
+                />
+              </FieldGroup>
+
+              <FieldGroup label="Completion Time" icon={Clock}>
+                <input
+                  type="text"
+                  value={settings.expectedCompletionTime}
+                  onChange={(e) =>
+                    handleInputChange("expectedCompletionTime", e.target.value)
+                  }
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="e.g., 2-3 minutes"
+                />
+              </FieldGroup>
             </div>
-          )}
+          </section>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Basic Information */}
-            <section className="relative space-y-4 bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 shadow-lg">
-              <h2 className="text-xl font-semibold text-white border-b border-gray-700 pb-2 flex items-center">
-                <Type size={20} className="mr-2 text-purple-400" />
-                Basic Information
-              </h2>
+          {/* Content & Tone */}
+          <section className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
+              <MessageCircle size={16} className="text-muted-foreground" />
+              Content & Tone
+            </h2>
 
-              <div className="grid grid-cols-1 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300 flex items-center">
-                    <Type
-                      size={16}
-                      className="mr-2 text-purple-400 opacity-70"
-                    />
-                    Form Title
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.title}
-                    onChange={(e) => handleInputChange("title", e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter form title"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300 flex items-center">
-                    <Clock
-                      size={16}
-                      className="mr-2 text-purple-400 opacity-70"
-                    />
-                    Completion Time
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.expectedCompletionTime}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "expectedCompletionTime",
-                        e.target.value
-                      )
-                    }
-                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                    placeholder="e.g., 2-3 minutes"
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Content & Tone */}
-            <section className="relative space-y-4 bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 shadow-lg">
-              <h2 className="text-xl font-semibold text-white border-b border-gray-700 pb-2 flex items-center">
-                <MessageCircle size={20} className="mr-2 text-purple-400" />
-                Content & Tone
-              </h2>
-
-              <div className="grid grid-cols-1 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300 flex items-center">
-                    <MessageCircle
-                      size={16}
-                      className="mr-2 text-purple-400 opacity-70"
-                    />
-                    Tone
-                  </label>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FieldGroup label="Tone" icon={MessageCircle}>
                   <input
                     type="text"
                     value={settings.tone}
                     onChange={(e) => handleInputChange("tone", e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                    placeholder="e.g., Friendly, Professional, Casual"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                    placeholder="e.g., Friendly, Professional"
                   />
-                </div>
+                </FieldGroup>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300 flex items-center">
-                    <Users
-                      size={16}
-                      className="mr-2 text-purple-400 opacity-70"
-                    />
-                    Persona
-                  </label>
+                <FieldGroup label="Persona" icon={Users}>
                   <input
                     type="text"
                     value={settings.persona}
                     onChange={(e) =>
                       handleInputChange("persona", e.target.value)
                     }
-                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                    placeholder="e.g., Sales Rep, Support Agent, Consultant"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                    placeholder="e.g., Support Agent"
                   />
-                </div>
+                </FieldGroup>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300 flex items-center">
-                  <Users
-                    size={16}
-                    className="mr-2 text-purple-400 opacity-70"
-                  />
-                  Target Audience
-                </label>
+              <FieldGroup label="Target Audience" icon={Users}>
                 <textarea
                   value={settings.targetAudience}
                   onChange={(e) =>
                     handleInputChange("targetAudience", e.target.value)
                   }
-                  className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 min-h-24 resize-y"
+                  className="min-h-20 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
                   placeholder="Describe your target audience"
                 />
-              </div>
+              </FieldGroup>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300 flex items-center">
-                  <Briefcase
-                    size={16}
-                    className="mr-2 text-purple-400 opacity-70"
-                  />
-                  About Business
-                </label>
+              <FieldGroup label="About Business" icon={Briefcase}>
                 <textarea
                   value={settings.aboutBusiness}
                   onChange={(e) =>
                     handleInputChange("aboutBusiness", e.target.value)
                   }
-                  className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 min-h-24 resize-y"
-                  placeholder="Tell us about your business or organization"
+                  className="min-h-20 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="Tell us about your business"
                 />
-              </div>
-            </section>
+              </FieldGroup>
+            </div>
+          </section>
 
-            {/* Messages */}
-            <section className="relative space-y-4 bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 shadow-lg">
-              <h2 className="text-xl font-semibold text-white border-b border-gray-700 pb-2 flex items-center">
-                <MessageCircle size={20} className="mr-2 text-purple-400" />
-                Form Messages
-              </h2>
+          {/* Messages */}
+          <section className="rounded-lg border border-border bg-surface p-5">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
+              <Send size={16} className="text-muted-foreground" />
+              Form Messages
+            </h2>
 
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300 flex items-center">
-                    <Hand
-                      size={16}
-                      className="mr-2 text-purple-400 opacity-70"
-                    />
-                    Welcome Message
-                  </label>
-                  <textarea
-                    value={settings.welcomeMessage}
-                    onChange={(e) =>
-                      handleInputChange("welcomeMessage", e.target.value)
-                    }
-                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 min-h-20 resize-y"
-                    placeholder="Message shown at the start of the form"
-                  />
-                </div>
+            <div className="space-y-4">
+              <FieldGroup label="Welcome Message" icon={Hand}>
+                <textarea
+                  value={settings.welcomeMessage}
+                  onChange={(e) =>
+                    handleInputChange("welcomeMessage", e.target.value)
+                  }
+                  className="min-h-20 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="Message shown at the start"
+                />
+              </FieldGroup>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300 flex items-center">
-                    <Send
-                      size={16}
-                      className="mr-2 text-purple-400 opacity-70"
-                    />
-                    Call To Action
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.callToAction}
-                    onChange={(e) =>
-                      handleInputChange("callToAction", e.target.value)
-                    }
-                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                    placeholder="e.g., Submit, Get Started, Continue"
-                  />
-                </div>
+              <FieldGroup label="Call To Action" icon={Send}>
+                <input
+                  type="text"
+                  value={settings.callToAction}
+                  onChange={(e) =>
+                    handleInputChange("callToAction", e.target.value)
+                  }
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="e.g., Submit, Get Started"
+                />
+              </FieldGroup>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300 flex items-center">
-                    <CheckCircle
-                      size={16}
-                      className="mr-2 text-purple-400 opacity-70"
-                    />
-                    End Screen Message
-                  </label>
-                  <textarea
-                    value={settings.endScreenMessage}
-                    onChange={(e) =>
-                      handleInputChange("endScreenMessage", e.target.value)
-                    }
-                    className="w-full px-3 py-2 bg-gray-800/70 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 min-h-20 resize-y"
-                    placeholder="Message shown to users after completing the form"
-                  />
-                </div>
-              </div>
-            </section>
+              <FieldGroup label="End Screen Message" icon={CheckCircle}>
+                <textarea
+                  value={settings.endScreenMessage}
+                  onChange={(e) =>
+                    handleInputChange("endScreenMessage", e.target.value)
+                  }
+                  className="min-h-20 w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent"
+                  placeholder="Message shown after completing the form"
+                />
+              </FieldGroup>
+            </div>
+          </section>
 
-            {/* Key Information */}
-            <section className="relative space-y-4 bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 shadow-lg">
-              <h2 className="text-xl font-semibold text-white border-b border-gray-700 pb-2 flex items-center">
-                <ListOrdered size={20} className="mr-2 text-purple-400" />
+          {/* Key Information */}
+          <section className="rounded-lg border border-border bg-surface p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <ListOrdered size={16} className="text-muted-foreground" />
                 Key Information
               </h2>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-300 flex items-center">
-                    <ListOrdered
-                      size={16}
-                      className="mr-2 text-purple-400 opacity-70"
-                    />
-                    Key Information
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleInputChange("keyInformation", [
-                        ...settings.keyInformation,
-                        "",
-                      ]);
-                    }}
-                    className="inline-flex items-center px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 rounded-md text-white transition-colors duration-200 shadow-md"
-                  >
-                    <Plus size={16} className="mr-1" />
-                    Add Key Information Item
-                  </button>
-                </div>
-
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                  {settings.keyInformation?.length === 0 ? (
-                    <div className="text-gray-400 italic text-sm py-2">
-                      No key information steps added yet. Add steps to guide
-                      users through your form.
-                    </div>
-                  ) : (
-                    settings.keyInformation?.map((step, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 bg-gray-800/50 border border-gray-700/50 rounded-md overflow-hidden group"
-                      >
-                        <div className="bg-purple-900/50 p-2 text-white font-medium">
-                          {index + 1}
-                        </div>
-                        <input
-                          type="text"
-                          value={step}
-                          onChange={(e) =>
-                            handleKeyInformationItemChange(
-                              index,
-                              e.target.value
-                            )
-                          }
-                          className="flex-1 px-3 py-2 bg-transparent border-none text-white focus:ring-0 focus:outline-none"
-                          placeholder={`Step ${index + 1} description`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveKeyInformationItem(index)}
-                          className="p-2 text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* Save/Cancel Buttons */}
-            <div className="sticky bottom-0 -mx-6 -mb-6 pt-3 px-6 pb-6 bg-gradient-to-t from-black to-transparent">
-              <div className="flex gap-4">
-                {hasChanges && (
-                  <button
-                    type="button"
-                    onClick={handleDiscardChanges}
-                    className="px-4 py-3 border border-white/10 rounded-md text-white/80 hover:text-white hover:bg-white/5 transition-colors duration-200"
-                  >
-                    Discard Changes
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={isSaving || !hasChanges}
-                  className={`flex-1 flex items-center justify-center px-4 py-3 rounded-md text-white font-medium transition-colors duration-200 shadow-lg ${
-                    isSaving
-                      ? "bg-purple-700 cursor-not-allowed"
-                      : !hasChanges
-                      ? "bg-purple-800/60 cursor-not-allowed text-white/70"
-                      : "bg-purple-600 hover:bg-purple-700"
-                  }`}
-                >
-                  {isSaving ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Saving Changes...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={18} className="mr-2" />
-                      Save Settings
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  handleInputChange("keyInformation", [
+                    ...settings.keyInformation,
+                    "",
+                  ]);
+                }}
+                className="inline-flex items-center gap-1 rounded-md bg-accent px-2.5 py-1.5 text-xs font-medium text-accent-foreground hover:opacity-90 transition-opacity"
+              >
+                <Plus size={14} />
+                Add Item
+              </button>
             </div>
-          </form>
-        </div>
+
+            <div className="space-y-2">
+              {settings.keyInformation?.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No key information items yet. Add items to guide users through
+                  your form.
+                </p>
+              ) : (
+                settings.keyInformation?.map((step, index) => (
+                  <div
+                    key={index}
+                    className="group flex items-center gap-2 rounded-md border border-border bg-background"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center border-r border-border text-xs font-medium text-muted-foreground">
+                      {index + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={step}
+                      onChange={(e) =>
+                        handleKeyInformationItemChange(index, e.target.value)
+                      }
+                      className="flex-1 bg-transparent px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                      placeholder={`Item ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveKeyInformationItem(index)}
+                      className="mr-1 rounded p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Save/Cancel Buttons */}
+          <div className="sticky bottom-0 -mx-6 -mb-6 border-t border-border bg-background px-6 py-4">
+            <div className="flex gap-3">
+              {hasChanges && (
+                <button
+                  type="button"
+                  onClick={handleDiscardChanges}
+                  className="rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-surface-hover transition-colors"
+                >
+                  Discard
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={isSaving || !hasChanges}
+                className="flex flex-1 items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    Save Settings
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
+    </div>
+  );
+}
+
+function FieldGroup({
+  label,
+  icon: Icon,
+  children,
+}: {
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <Icon size={14} />
+        {label}
+      </label>
+      {children}
     </div>
   );
 }

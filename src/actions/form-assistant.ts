@@ -19,6 +19,8 @@ import { trackEvent } from "@/lib/jitsu-server";
 import { fireWebhook } from "@/lib/webhook";
 import { withAIErrorHandling } from "@/lib/ai-utils";
 import { sendResponseNotification } from "@/lib/email";
+import { headers } from "next/headers";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -46,7 +48,18 @@ const formatMessageContent = (
   return message.content;
 };
 
+async function getClientIp(): Promise<string> {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+}
+
 export async function createFormSessionAction(formId: string) {
+  const ip = await getClientIp();
+  const { allowed } = rateLimit(`session:${ip}`, { maxRequests: 10, windowMs: 60_000 });
+  if (!allowed) {
+    throw new Error("Too many requests. Please try again later.");
+  }
+
   const { createFormSession } = await import("@/db/storage");
   return createFormSession({ formId, messageHistory: [] });
 }
@@ -56,6 +69,12 @@ export async function sendMessage(
   sessionId: string,
   message: Message
 ) {
+  const ip = await getClientIp();
+  const { allowed } = rateLimit(`msg:${ip}`, { maxRequests: 30, windowMs: 60_000 });
+  if (!allowed) {
+    throw new Error("Too many requests. Please try again later.");
+  }
+
   const messages = await getFormSessionMessages(sessionId);
   const newMessages: ExtendedMessage[] = [...messages, message];
 

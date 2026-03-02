@@ -79,5 +79,16 @@ export async function updateFormSettingsAction(
     throw new Error("Unauthorized");
   }
 
+  if (settings.webhookUrl) {
+    try {
+      const parsed = new URL(settings.webhookUrl);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new Error("Webhook URL must use http or https.");
+      }
+    } catch {
+      throw new Error("Webhook URL must be a valid http or https URL.");
+    }
+  }
+
   return updateForm(formId, settings, session.user.id);
 }

@@ -17,6 +17,7 @@ import {
 import { ExtendedMessage } from "@/db/schema";
 import { trackEvent } from "@/lib/jitsu-server";
 import { fireWebhook } from "@/lib/webhook";
+import { withAIErrorHandling } from "@/lib/ai-utils";
 
 // Type for the form response
 export type FormAssistantResponse = z.infer<typeof formAssistantResponseSchema>;
@@ -83,14 +84,17 @@ export async function sendMessage(
     ),
   }));
 
-  const result = await generateObject({
-    model: openai("gpt-4o-mini"),
-    schemaName: "form-assistant-response",
-    schemaDescription: "Schema for form assistant response",
-    schema: formAssistantResponseSchema,
-    messages: formattedMessages,
-    system: formAssistantSystemPrompt,
-  });
+  const result = await withAIErrorHandling((signal) =>
+    generateObject({
+      model: openai("gpt-4o-mini"),
+      schemaName: "form-assistant-response",
+      schemaDescription: "Schema for form assistant response",
+      schema: formAssistantResponseSchema,
+      messages: formattedMessages,
+      system: formAssistantSystemPrompt,
+      abortSignal: signal,
+    })
+  );
 
   const messageId = `msg-${Date.now()}-${Math.random()
     .toString(36)

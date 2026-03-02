@@ -8,6 +8,7 @@ import { formBuilderSystemPrompt } from "@/system-prompts/builder";
 import { addFormMessages, getFormMessages, updateForm } from "@/db/storage";
 import { ExtendedMessage } from "@/db/schema";
 import { trackEvent } from "@/lib/jitsu-server";
+import { withAIErrorHandling } from "@/lib/ai-utils";
 
 // Type for the form response
 export type FormResponse = z.infer<typeof formResponseSchema>;
@@ -27,15 +28,18 @@ export async function sendMessage(formId: string, message: Message) {
   const newMessages: ExtendedMessage[] = [...messages, message];
   await addFormMessages(formId, newMessages);
 
-  const result = await generateObject({
-    model: openai("gpt-4o-mini"),
-    schemaName: "form-settings-response",
-    schemaDescription:
-      "Schema for form settings including fields configuration",
-    schema: formResponseSchema,
-    messages: newMessages,
-    system: formBuilderSystemPrompt,
-  });
+  const result = await withAIErrorHandling((signal) =>
+    generateObject({
+      model: openai("gpt-4o-mini"),
+      schemaName: "form-settings-response",
+      schemaDescription:
+        "Schema for form settings including fields configuration",
+      schema: formResponseSchema,
+      messages: newMessages,
+      system: formBuilderSystemPrompt,
+      abortSignal: signal,
+    })
+  );
 
   const messageId = `msg-${Date.now()}-${Math.random()
     .toString(36)

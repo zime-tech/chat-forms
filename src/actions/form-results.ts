@@ -8,6 +8,7 @@ import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
 import { getFormMessages } from "@/db/storage";
 import { formOverallSummarySchema } from "@/types/promp-schema";
 import { getFormSummaryPrompt } from "@/system-prompts/results";
+import { withAIErrorHandling } from "@/lib/ai-utils";
 
 // Define types for our response that will be used on the client
 export type FormSessionBasic = {
@@ -131,16 +132,19 @@ export async function getOverallSummary(formId: string) {
 
   const prompt = getFormSummaryPrompt(sessions, messages);
 
-  const result = await generateObject({
-    model: openai("gpt-4o-mini"),
-    messages: [
-      {
-        role: "system",
-        content: prompt,
-      },
-    ],
-    schema: formOverallSummarySchema,
-  });
+  const result = await withAIErrorHandling((signal) =>
+    generateObject({
+      model: openai("gpt-4o-mini"),
+      messages: [
+        {
+          role: "system",
+          content: prompt,
+        },
+      ],
+      schema: formOverallSummarySchema,
+      abortSignal: signal,
+    })
+  );
 
   return result.object;
 }

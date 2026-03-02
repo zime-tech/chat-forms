@@ -2,6 +2,7 @@
 
 import { db } from "@/db/db";
 import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { redirect } from "next/navigation";
@@ -77,9 +78,7 @@ export async function login(
       return { error: "Database connection error" };
     }
 
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.email, email),
-    });
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (!user || !user.password) {
       return { error: "Invalid email or password" };
@@ -137,9 +136,7 @@ export async function register(
     }
 
     // Check if email already exists
-    const existingUser = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.email, email),
-    });
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (existingUser) {
       return {

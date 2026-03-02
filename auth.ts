@@ -1,4 +1,4 @@
-import NextAuth, { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/db/db";
@@ -7,9 +7,9 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 
-// Ensure we have a secret for JWT encryption/decryption
-if (!process.env.NEXTAUTH_SECRET) {
-  throw new Error("Please provide a NEXTAUTH_SECRET environment variable");
+// Warn if NEXTAUTH_SECRET is missing (will fail at runtime, not import time)
+if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV !== "production") {
+  console.warn("NEXTAUTH_SECRET is not set. Authentication will not work.");
 }
 
 export const authOptions: NextAuthOptions = {
@@ -81,8 +81,6 @@ export const authOptions: NextAuthOptions = {
   },
   debug: process.env.NODE_ENV === "development",
 };
-
-export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
 
 export const getSession = async () => {
   const session = await getServerSession(authOptions);

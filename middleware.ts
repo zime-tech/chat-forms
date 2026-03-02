@@ -1,36 +1,30 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
+import { NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ["/login", "/register", "/forms"];
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const sessionCookie = req.cookies.get("next-auth.session-token") ||
+    req.cookies.get("__Secure-next-auth.session-token");
+  const isAuthenticated = !!token || !!sessionCookie;
 
-export default withAuth(
-  function middleware(req) {
-    const { pathname } = req.nextUrl;
-    const isAuthenticated = !!req.nextauth?.token;
-
-    // Protected routes require authentication
-    if (pathname.startsWith("/dashboard") && !isAuthenticated) {
-      return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
-    }
-
-    // Redirect authenticated users from login/register to dashboard
-    if (
-      (pathname === "/login" || pathname === "/register") &&
-      isAuthenticated
-    ) {
-      return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
-    }
-
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
+  // Dashboard requires authentication
+  if (pathname.startsWith("/dashboard") && !isAuthenticated) {
+    return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
   }
-);
 
-// Match all routes except for assets, api routes, etc.
+  // Redirect authenticated users away from login/register
+  if (
+    (pathname === "/login" || pathname === "/register") &&
+    isAuthenticated
+  ) {
+    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+  }
+
+  return NextResponse.next();
+}
+
+// Only run middleware on app pages, not API routes or static assets
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|images|favicon.ico).*)"],
 };

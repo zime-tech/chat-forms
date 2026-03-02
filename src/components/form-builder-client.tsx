@@ -20,6 +20,7 @@ interface FormBuilderProps {
   formId: string;
   initialMessages?: Message[];
   createdAt?: string;
+  responseCount?: number;
 }
 
 const tabs = [
@@ -34,6 +35,7 @@ export default function FormBuilder({
   formId,
   initialMessages,
   createdAt,
+  responseCount,
 }: FormBuilderProps) {
   const getInitialTab = (): "chat" | "settings" | "results" | "overall-summary" | "share" => {
     if (typeof window === "undefined") return "chat";
@@ -148,6 +150,10 @@ export default function FormBuilder({
         formId={formId}
         formTitle={formSettings?.title}
         createdAt={createdAt}
+        isClosed={
+          formSettings?.status === "closed" ||
+          (!!formSettings?.closedAt && new Date(formSettings.closedAt) <= new Date())
+        }
         handleCopyLink={handleCopyLink}
         copied={copied}
       />
@@ -174,6 +180,11 @@ export default function FormBuilder({
               >
                 <tab.icon size={14} />
                 <span className="hidden sm:inline">{tab.label}</span>
+                {tab.id === "results" && responseCount != null && responseCount > 0 && (
+                  <span className="ml-0.5 rounded-full bg-accent/20 px-1.5 py-px text-[9px] font-semibold text-accent">
+                    {responseCount}
+                  </span>
+                )}
               </button>
             ))}
 

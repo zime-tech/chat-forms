@@ -7,6 +7,7 @@ import { Message } from "@ai-sdk/react";
 import { ExtendedMessage, FormSettings } from "./types";
 import MessageList from "./message-list";
 import InputForm from "./input-form";
+import { INITIAL_BUILDER_MESSAGE } from "@/lib/constants";
 
 interface FormBuilderClientProps {
   formId: string;
@@ -42,7 +43,7 @@ export default function FormBuilderChat({
       {
         id: "initial-message",
         role: "assistant",
-        content: "Let's start creating the form. Give me an idea of what is form created for?",
+        content: INITIAL_BUILDER_MESSAGE,
       },
     ],
   });

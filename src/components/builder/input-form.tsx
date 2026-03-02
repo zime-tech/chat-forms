@@ -26,6 +26,7 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
           rows={1}
           className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
           placeholder="Describe a form you need..."
+          maxLength={2000}
           disabled={isLoading}
           value={inputValue}
           onChange={(e) => {

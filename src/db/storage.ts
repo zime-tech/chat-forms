@@ -12,8 +12,7 @@ import {
 import { db } from "@/db/db";
 import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import { FormAssistantResponse } from "@/actions/form-assistant";
-
-const MAX_FORMS_PER_USER = 10;
+import { MAX_FORMS_PER_USER } from "@/lib/constants";
 
 export const createForm = async (newForm: FormSettingsInsert) => {
   if (!db) {

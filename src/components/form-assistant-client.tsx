@@ -295,6 +295,7 @@ export default function FormAssistantClient({
                 rows={1}
                 className="w-full resize-none rounded-xl border border-border bg-surface px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                 placeholder="Type your response..."
+                maxLength={1000}
                 disabled={isLoading}
                 value={inputValue}
                 onChange={(e) => {

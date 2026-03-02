@@ -1,9 +1,21 @@
+import type { Metadata } from "next";
 import FormBuilderClient from "@/components/form-builder-client";
 import { getForm, getFormMessages } from "@/db/storage";
 import { getSession } from "auth";
 import { redirect } from "next/navigation";
+import { INITIAL_BUILDER_MESSAGE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const form = await getForm(id);
+  return { title: form?.title || "Form Builder" };
+}
 
 export default async function FormBuilderPage({
   params,
@@ -29,8 +41,7 @@ export default async function FormBuilderPage({
     messages.push({
       id: "initial-message",
       role: "assistant",
-      content:
-        "Let's start creating the form. Give me an idea of what is form created for?",
+      content: INITIAL_BUILDER_MESSAGE,
     });
   }
 

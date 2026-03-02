@@ -12,7 +12,7 @@ import {
   FormSessionDetail,
   FormAnalytics,
 } from "@/actions/form-results";
-import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare, MessageCircle } from "lucide-react";
+import { AlertTriangle, Calendar, Download, RefreshCw, Loader2, Search, X, BarChart3, Clock, TrendingUp, Users, Flag, CheckSquare, MessageCircle, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const SENTIMENT_OPTIONS = ["all", "positive", "neutral", "negative"] as const;
@@ -30,6 +30,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
   const [analytics, setAnalytics] = useState<FormAnalytics | null>(null);
+  const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -86,7 +87,10 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const handleSelectSession = async (sessionId: string) => {
     try {
       const details = await getFormSessionDetails(sessionId);
-      if (details) setSelectedSession(details);
+      if (details) {
+        setSelectedSession(details);
+        setMobileShowDetail(true);
+      }
     } catch {
       setError("Failed to load response details");
     }
@@ -248,8 +252,8 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
       )}
 
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-        {/* List sidebar */}
-        <div className="w-full md:w-[35%] border-b md:border-b-0 md:border-r border-border flex flex-col max-h-[40%] md:max-h-none">
+        {/* List sidebar - hidden on mobile when detail is shown */}
+        <div className={`w-full md:w-[35%] border-b md:border-b-0 md:border-r border-border flex flex-col md:flex ${mobileShowDetail ? "hidden" : "flex flex-1"}`}>
           {/* Search and filters */}
           <div className="border-b border-border p-2 space-y-1.5">
             <div className="relative">
@@ -341,10 +345,19 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
           </div>
         </div>
 
-        {/* Detail */}
-        <div className="flex-1 overflow-y-auto p-4">
+        {/* Detail - full screen on mobile when shown */}
+        <div className={`flex-1 overflow-y-auto p-4 md:block ${mobileShowDetail ? "block" : "hidden"}`}>
           {selectedSession ? (
             <div className="space-y-4">
+              {/* Mobile back button */}
+              <button
+                onClick={() => setMobileShowDetail(false)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors md:hidden"
+              >
+                <ArrowLeft size={12} />
+                Back to list
+              </button>
+
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="font-medium text-foreground">

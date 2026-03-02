@@ -331,7 +331,11 @@ export default function FormAssistantClient({
           {error && (
             <div className="mt-3 flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
               <AlertCircle size={16} className="shrink-0 text-destructive" />
-              <p className="flex-1 text-sm text-foreground">{error}</p>
+              <p className="flex-1 text-sm text-foreground">
+                {error.toLowerCase().includes("too many requests")
+                  ? "You're sending messages too quickly. Please wait a moment and try again."
+                  : error}
+              </p>
               <button
                 onClick={clearError}
                 className="inline-flex items-center gap-1 rounded-md bg-surface px-2.5 py-1 text-xs font-medium text-foreground hover:bg-surface-hover transition-colors border border-border"

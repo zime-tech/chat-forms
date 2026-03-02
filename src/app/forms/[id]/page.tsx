@@ -54,7 +54,16 @@ export default async function FormPage({
       className="h-full"
       {...(accentColor ? { style: { "--accent": accentColor } as React.CSSProperties } : {})}
     >
-      <Suspense>
+      <Suspense
+        fallback={
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+              <p className="text-sm text-muted-foreground">Loading form...</p>
+            </div>
+          </div>
+        }
+      >
         <FormAssistantClient
           formId={id}
           formSettings={formSettings as FormSettings}

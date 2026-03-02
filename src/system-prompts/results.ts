@@ -21,12 +21,16 @@ ${JSON.stringify(sessions)}
 ${JSON.stringify(messages)}
 
 ## Response Format
-Please provide a summary of the form sessions and the overall sentiment of the form.
+Please provide:
+- A concise summary of the form sessions (2-4 sentences).
+- The overall sentiment (e.g. "Mostly positive", "Mixed", "Largely negative").
+- 3-6 key themes that emerged across responses (short phrases, each under 8 words).
 
 ## Response
 {
   "summary": "string",
-  "sentiment": "string"
+  "sentiment": "string",
+  "keyThemes": ["string", ...]
 }
   `;
 }

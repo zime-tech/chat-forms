@@ -198,7 +198,12 @@ export async function getFormAnalytics(formId: string): Promise<FormAnalytics> {
       `.as("avg_seconds"),
     })
     .from(formSessions)
-    .where(eq(formSessions.formId, formId));
+    .where(
+      and(
+        eq(formSessions.formId, formId),
+        sql`json_array_length(${formSessions.messageHistory}) > 0`
+      )
+    );
 
   const sentimentRows: { sentiment: string | null; count: number }[] = await db
     .select({

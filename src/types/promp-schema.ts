@@ -42,4 +42,5 @@ export const formAssistantResponseSchema = z.object({
 export const formOverallSummarySchema = z.object({
   summary: z.string(),
   sentiment: z.string(),
+  keyThemes: z.array(z.string()),
 });

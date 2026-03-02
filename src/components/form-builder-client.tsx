@@ -1,8 +1,8 @@
 "use client";
 
 import { Message } from "@ai-sdk/react";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { MessageCircle, Settings, BarChart3, LineChart, Eye, X, Share2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { MessageCircle, Settings, BarChart3, LineChart, Eye, Share2, X } from "lucide-react";
 import FormBuilderChat from "./builder/form-builder-chat";
 import Header from "./builder/header";
 import { useFormSettings } from "@/hooks/use-form-settings";
@@ -10,7 +10,6 @@ import FormSettingsPanel from "./settings/form-setting-panel";
 import { FormSettings } from "./builder/types";
 import { Toaster } from "sonner";
 import FormAssistantClient from "./form-assistant-client";
-import { createFormSessionAction } from "@/actions/form-assistant";
 import FormResultsPanel from "./results/form-results-panel";
 import FormSummaryPanel from "./results/form-summary-panel";
 import FormSharingPanel from "./sharing/form-sharing-panel";
@@ -57,13 +56,7 @@ export default function FormBuilder({
       },
     ]
   );
-  const [formAssistantSessionId, setFormAssistantSessionId] = useState<string | null>(null);
-
-  const resetSession = useCallback(() => {
-    createFormSessionAction(formId).then((newSession) => {
-      setFormAssistantSessionId(newSession.id);
-    });
-  }, [formId]);
+  const [previewKey, setPreviewKey] = useState(0);
 
   const {
     formSettings,
@@ -72,13 +65,6 @@ export default function FormBuilder({
     formSettingsUpdated,
     setFormSettingsUpdated,
   } = useFormSettings(messages, formId);
-
-  // Create a preview session only when form settings first become available
-  useEffect(() => {
-    if (formSettings && !formAssistantSessionId) {
-      resetSession();
-    }
-  }, [formSettings, formAssistantSessionId, resetSession]);
 
   const [copied, setCopied] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -133,8 +119,7 @@ export default function FormBuilder({
   const confirmReset = () => {
     setShowResetConfirm(false);
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-    setFormAssistantSessionId(null);
-    setTimeout(() => resetSession(), 10);
+    setPreviewKey((k) => k + 1);
   };
 
   const cancelReset = () => {
@@ -189,7 +174,7 @@ export default function FormBuilder({
             ))}
 
             {/* Mobile preview toggle */}
-            {formAssistantSessionId && formSettings && (
+            {formSettings && (
               <button
                 onClick={() => setShowMobilePreview(true)}
                 className="ml-auto flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors md:hidden"
@@ -248,7 +233,7 @@ export default function FormBuilder({
 
         {/* Right panel - form preview (hidden on mobile, shown as overlay) */}
         <div className={`hidden md:block overflow-hidden relative transition-all duration-200 ${activeTab === "results" ? "w-[45%]" : "w-[55%]"}`}>
-          {formAssistantSessionId && formSettings && (
+          {formSettings && (
             <div className="absolute top-3 right-3 z-20">
               {showResetConfirm ? (
                 <div className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs">
@@ -276,9 +261,9 @@ export default function FormBuilder({
               )}
             </div>
           )}
-          {formAssistantSessionId && formSettings ? (
+          {formSettings ? (
             <FormAssistantClient
-              sessionId={formAssistantSessionId}
+              key={previewKey}
               formId={formId}
               formSettings={formSettings}
               hideHeader
@@ -330,9 +315,9 @@ export default function FormBuilder({
               </div>
             </div>
             <div className="h-[calc(100%-41px)]">
-              {formAssistantSessionId && formSettings ? (
+              {formSettings ? (
                 <FormAssistantClient
-                  sessionId={formAssistantSessionId}
+                  key={previewKey}
                   formId={formId}
                   formSettings={formSettings}
                   hideHeader

@@ -151,7 +151,7 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const handleExport = async () => {
     try {
       const data = await getFormSessionsForExport(formId);
-      const headers = ["Date", "Summary", "Sentiment", "Details", "Structured Answers"];
+      const headers = ["Date", "Summary", "Sentiment", "Details", "Structured Answers", "Flagged", "Reviewed"];
       const rows = data.map((s) => {
         const structuredStr = s.structuredData
           ? s.structuredData.map((a) => `${a.question}: ${a.answer}`).join("; ")
@@ -162,6 +162,8 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
           s.overallSentiment || "",
           `"${(s.detailedSummary || "").replace(/"/g, '""')}"`,
           `"${structuredStr.replace(/"/g, '""')}"`,
+          s.flagged ? "Yes" : "No",
+          s.reviewed ? "Yes" : "No",
         ];
       });
 

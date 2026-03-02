@@ -91,7 +91,7 @@ export default function FormSettingsPanel({
     handleInputChange("keyInformation", updatedKeyInformation);
   };
 
-  const validateSettings = (): string | null => {
+  const validateSettings = useCallback((): string | null => {
     if (!settings.title.trim()) {
       return "Form title is required.";
     }
@@ -111,7 +111,7 @@ export default function FormSettingsPanel({
       }
     }
     return null;
-  };
+  }, [settings]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();

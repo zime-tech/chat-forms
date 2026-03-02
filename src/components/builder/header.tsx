@@ -1,56 +1,59 @@
 "use client";
 
-import { MessageSquare, LinkIcon, FileText } from "lucide-react";
-import SharePopup from "./share-popup";
+import { ArrowLeft, Link as LinkIcon, Check, Copy } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   formId: string;
-  showSharePopup: boolean;
-  setShowSharePopup: (show: boolean) => void;
   handleCopyLink: () => void;
   copied: boolean;
 }
 
 export default function Header({
   formId,
-  showSharePopup,
-  setShowSharePopup,
   handleCopyLink,
   copied,
 }: HeaderProps) {
-  const handleShareClick = () => {
-    setShowSharePopup(!showSharePopup);
-  };
+  const router = useRouter();
 
   return (
-    <header className="p-6 backdrop-blur-md bg-black/30 border-b border-white/10 flex items-center z-[90] relative">
-      <div className="flex items-center space-x-3">
-        <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-          <MessageSquare size={18} className="text-white" />
-        </div>
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-          Form Builder
-        </h1>
+    <header className="flex h-12 items-center justify-between border-b border-border bg-surface px-4 shrink-0">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={16} />
+        </button>
+        <span className="text-sm font-medium text-foreground">Form Builder</span>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
-        <div className="relative">
-          <button
-            onClick={handleShareClick}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border bg-white/5 text-white/80 border-white/10 hover:bg-white/10 hover:text-white"
-          >
-            <LinkIcon size={14} />
-            <span className="text-sm">Share</span>
-          </button>
-
-          {showSharePopup && (
-            <SharePopup
-              formId={formId}
-              handleCopyLink={handleCopyLink}
-              copied={copied}
-            />
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleCopyLink}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          {copied ? (
+            <>
+              <Check size={12} className="text-success" />
+              Copied
+            </>
+          ) : (
+            <>
+              <Copy size={12} />
+              Copy link
+            </>
           )}
-        </div>
+        </button>
+        <a
+          href={`/forms/${formId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground hover:opacity-90 transition-opacity"
+        >
+          <LinkIcon size={12} />
+          Open form
+        </a>
       </div>
     </header>
   );

@@ -9,7 +9,10 @@
     "lint": "next lint",
     "db:generate": "drizzle-kit generate --config src/db/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config src/db/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config src/db/drizzle.config.ts"
+    "db:studio": "drizzle-kit studio --config src/db/drizzle.config.ts",
+    "db:seed": "npx tsx src/db/seed.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.1",
@@ -27,11 +30,9 @@
     "drizzle-zod": "^0.7.0",
     "firebase": "^11.5.0",
     "framer-motion": "^12.5.0",
-    "install": "^0.13.0",
     "lucide-react": "^0.483.0",
     "next": "15.2.3",
     "next-auth": "^4.24.11",
-    "npm": "^11.2.0",
     "pg": "^8.14.1",
     "postgres": "^3.4.5",
     "react": "^19.0.0",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^20",
@@ -52,6 +54,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

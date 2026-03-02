@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import {
   getFormSessions,
   getFormSessionDetails,
+  getFormSessionsForExport,
   FormSessionBasic,
   FormSessionDetail,
 } from "@/actions/form-results";
-import { AlertTriangle, Calendar, Clock, RefreshCw, User } from "lucide-react";
+import { AlertTriangle, Calendar, Download, RefreshCw, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface FormResultsPanelProps {
@@ -17,11 +18,9 @@ interface FormResultsPanelProps {
 export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<FormSessionBasic[]>([]);
-  const [selectedSession, setSelectedSession] =
-    useState<FormSessionDetail | null>(null);
+  const [selectedSession, setSelectedSession] = useState<FormSessionDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch sessions on mount and when formId changes
   useEffect(() => {
     fetchSessions();
   }, [formId]);
@@ -35,9 +34,8 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
       if (result?.length > 0 && !selectedSession) {
         setSelectedSession(result[0]);
       }
-    } catch (err) {
-      setError("Failed to load form sessions");
-      console.error(err);
+    } catch {
+      setError("Failed to load responses");
     } finally {
       setLoading(false);
     }
@@ -45,52 +43,67 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
 
   const handleSelectSession = async (sessionId: string) => {
     try {
-      const sessionDetails = await getFormSessionDetails(sessionId);
-      if (sessionDetails) {
-        setSelectedSession(sessionDetails);
-      }
-    } catch (err) {
-      setError("Failed to load session details");
-      console.error(err);
+      const details = await getFormSessionDetails(sessionId);
+      if (details) setSelectedSession(details);
+    } catch {
+      setError("Failed to load response details");
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const data = await getFormSessionsForExport(formId);
+      const headers = ["Date", "Summary", "Details", "Sentiment"];
+      const rows = data.map((s) => [
+        s.createdAt ? new Date(s.createdAt).toISOString() : "",
+        `"${(s.quickSummary || "").replace(/"/g, '""')}"`,
+        `"${(s.detailedSummary || "").replace(/"/g, '""')}"`,
+        s.overallSentiment || "",
+      ]);
+
+      const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `responses-${formId.slice(0, 8)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Failed to export responses");
     }
   };
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <RefreshCw className="w-6 h-6 text-purple-500 animate-spin" />
-          <p className="text-white/70">Loading form responses...</p>
-        </div>
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <AlertTriangle className="w-6 h-6 text-red-500" />
-          <p className="text-white/70">{error}</p>
-          <button
-            onClick={fetchSessions}
-            className="mt-2 px-3 py-1.5 text-xs rounded-md bg-purple-600 hover:bg-purple-700 text-white transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <AlertTriangle className="h-5 w-5 text-destructive" />
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <button
+          onClick={fetchSessions}
+          className="rounded-md bg-accent px-3 py-1.5 text-xs text-accent-foreground hover:opacity-90"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   if (sessions.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <p className="text-white/70 mb-2">No form submissions yet</p>
-          <p className="text-white/50 text-sm max-w-md mx-auto">
-            When users complete your form, their responses and summaries will
-            appear here.
+          <p className="text-sm font-medium text-foreground">No responses yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Responses will appear here when people complete your form.
           </p>
         </div>
       </div>
@@ -98,127 +111,87 @@ export default function FormResultsPanel({ formId }: FormResultsPanelProps) {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex justify-between items-center px-4 py-3 border-b border-white/10">
-        <h3 className="text-sm font-medium text-white">Form Responses</h3>
-        <button
-          onClick={fetchSessions}
-          className="p-1.5 rounded-md hover:bg-purple-600/30 text-white/70 hover:text-white transition-colors"
-          title="Refresh"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <span className="text-xs font-medium text-foreground">
+          {sessions.length} {sessions.length === 1 ? "response" : "responses"}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleExport}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title="Export as CSV"
+          >
+            <Download size={12} />
+          </button>
+          <button
+            onClick={fetchSessions}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw size={12} />
+          </button>
+        </div>
       </div>
 
-      <div className="flex h-full">
-        {/* Session list sidebar */}
-        <div className="w-[35%] border-r border-white/10 overflow-y-auto">
-          <div className="px-3 py-2 text-xs text-white/50 border-b border-white/10">
-            {sessions.length} {sessions.length === 1 ? "response" : "responses"}
-          </div>
-
-          <div className="divide-y divide-white/10">
-            {sessions.map((session) => (
-              <button
-                key={session.id}
-                onClick={() => handleSelectSession(session.id)}
-                className={`w-full text-left px-3 py-2.5 text-sm hover:bg-purple-600/20 transition-colors ${
-                  selectedSession?.id === session.id ? "bg-purple-600/30" : ""
-                }`}
-              >
-                <div className="font-medium text-white/90 truncate">
-                  {session.quickSummary || "Unlabeled response"}
-                </div>
-                <div className="flex items-center gap-1.5 mt-1 text-xs text-white/50">
-                  <Calendar className="w-3 h-3" />
-                  <span>
-                    {session.createdAt
-                      ? formatDistanceToNow(new Date(session.createdAt), {
-                          addSuffix: true,
-                        })
-                      : "Unknown date"}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        {/* List */}
+        <div className="w-full md:w-[35%] border-b md:border-b-0 md:border-r border-border overflow-y-auto max-h-[40%] md:max-h-none">
+          {sessions.map((session) => (
+            <button
+              key={session.id}
+              onClick={() => handleSelectSession(session.id)}
+              className={`w-full text-left px-3 py-2.5 text-xs border-b border-border hover:bg-surface-hover transition-colors ${
+                selectedSession?.id === session.id ? "bg-accent/5 border-l-2 border-l-accent" : ""
+              }`}
+            >
+              <p className="font-medium text-foreground truncate">
+                {session.quickSummary || "Unlabeled"}
+              </p>
+              <p className="mt-0.5 flex items-center gap-1 text-muted-foreground">
+                <Calendar size={10} />
+                {session.createdAt
+                  ? formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })
+                  : "Unknown"}
+              </p>
+            </button>
+          ))}
         </div>
 
-        {/* Session details */}
+        {/* Detail */}
         <div className="flex-1 overflow-y-auto p-4">
           {selectedSession ? (
-            <div>
-              <div className="mb-5">
-                <h3 className="text-lg font-semibold text-white">
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-foreground">
                   {selectedSession.quickSummary || "Unlabeled response"}
                 </h3>
-                <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>
-                      {selectedSession.createdAt
-                        ? formatDistanceToNow(
-                            new Date(selectedSession.createdAt),
-                            { addSuffix: true }
-                          )
-                        : "Unknown date"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <User className="w-3.5 h-3.5" />
-                    <span>Anonymous user</span>
-                  </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {selectedSession.createdAt
+                    ? formatDistanceToNow(new Date(selectedSession.createdAt), { addSuffix: true })
+                    : "Unknown date"}
+                </p>
+              </div>
+
+              {selectedSession.overallSentiment && (
+                <div className="rounded-lg border border-border bg-surface p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Sentiment</p>
+                  <p className="text-sm text-foreground">{selectedSession.overallSentiment}</p>
                 </div>
-              </div>
+              )}
 
-              <div className="space-y-5">
-                {selectedSession.overallSentiment && (
-                  <div className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
-                    <h4 className="text-sm font-medium text-white mb-2">
-                      Overall Sentiment
-                    </h4>
-                    <p className="text-white/80">
-                      {selectedSession.overallSentiment}
-                    </p>
-                  </div>
-                )}
-
-                {selectedSession.quickSummary && (
-                  <div className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
-                    <h4 className="text-sm font-medium text-white mb-2">
-                      Quick Summary
-                    </h4>
-                    <p className="text-white/80">
-                      {selectedSession.quickSummary}
-                    </p>
-                  </div>
-                )}
-
-                {selectedSession.detailedSummary && (
-                  <div className="bg-gray-800/50 rounded-lg p-4 border border-white/10">
-                    <h4 className="text-sm font-medium text-white mb-2">
-                      Detailed Summary
-                    </h4>
-                    <p className="text-white/80 whitespace-pre-line">
-                      {selectedSession.detailedSummary}
-                    </p>
-                  </div>
-                )}
-
-                {!selectedSession.quickSummary &&
-                  !selectedSession.detailedSummary &&
-                  !selectedSession.overallSentiment && (
-                    <div className="text-center py-8">
-                      <p className="text-white/50">
-                        No summary data available for this response
-                      </p>
-                    </div>
-                  )}
-              </div>
+              {selectedSession.detailedSummary && (
+                <div className="rounded-lg border border-border bg-surface p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Details</p>
+                  <p className="text-sm text-foreground whitespace-pre-line">
+                    {selectedSession.detailedSummary}
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-white/50">Select a response to view details</p>
+            <div className="flex h-full items-center justify-center">
+              <p className="text-xs text-muted-foreground">Select a response</p>
             </div>
           )}
         </div>

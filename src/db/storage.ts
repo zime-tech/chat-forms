@@ -9,7 +9,7 @@ import {
   forms,
 } from "@/db/schema";
 import { db } from "@/db/db";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import { FormAssistantResponse } from "@/actions/form-assistant";
 
 const MAX_FORMS_PER_USER = 10;
@@ -84,11 +84,50 @@ export const getUserForms = async (userId: string) => {
   }
 
   const allForms = await db
-    .select()
+    .select({
+      id: forms.id,
+      title: forms.title,
+      tone: forms.tone,
+      persona: forms.persona,
+      keyInformation: forms.keyInformation,
+      targetAudience: forms.targetAudience,
+      expectedCompletionTime: forms.expectedCompletionTime,
+      aboutBusiness: forms.aboutBusiness,
+      welcomeMessage: forms.welcomeMessage,
+      callToAction: forms.callToAction,
+      endScreenMessage: forms.endScreenMessage,
+      messageHistory: forms.messageHistory,
+      createdAt: forms.createdAt,
+      userId: forms.userId,
+      responseCount: count(formSessions.id),
+    })
     .from(forms)
+    .leftJoin(formSessions, eq(forms.id, formSessions.formId))
     .where(eq(forms.userId, userId))
-    .orderBy(forms.createdAt);
+    .groupBy(forms.id)
+    .orderBy(desc(forms.createdAt));
   return allForms;
+};
+
+export const deleteForm = async (id: string, userId: string) => {
+  if (!db) {
+    throw new Error("Database not initialized");
+  }
+
+  // Verify ownership
+  const [form] = await db
+    .select({ id: forms.id })
+    .from(forms)
+    .where(and(eq(forms.id, id), eq(forms.userId, userId)));
+
+  if (!form) {
+    throw new Error("Form not found");
+  }
+
+  // Delete sessions first (FK constraint)
+  await db.delete(formSessions).where(eq(formSessions.formId, id));
+  // Delete form
+  await db.delete(forms).where(eq(forms.id, id));
 };
 
 export const updateForm = async (

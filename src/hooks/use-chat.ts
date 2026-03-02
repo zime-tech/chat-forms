@@ -1,7 +1,7 @@
 "use client";
 
 import { Message } from "@ai-sdk/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export type ChatOptions<TResponse> = {
   sendMessage: (formId: string, message: Message) => Promise<Message[]>;
@@ -16,6 +16,7 @@ export function useChat<TResponse>({
 }: ChatOptions<TResponse>) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -25,46 +26,42 @@ export function useChat<TResponse>({
 
     if (!userMessage.trim()) return;
 
-    // Create a temporary message ID
     const messageId = `msg-${Date.now()}-${Math.random()
       .toString(36)
       .substring(2, 9)}`;
 
-    // Create the message object
     const message: Message = {
       id: messageId,
       role: "user",
       content: userMessage,
     };
 
-    // Show optimistic UI update
     setMessages([...messages, message]);
-
-    // Send the message to the action
     setIsLoading(true);
+    setError(null);
+
     try {
       const updatedMessages = await sendMessage(formId, message);
-      // Update with the authoritative message list from the server
       setMessages(updatedMessages);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      // Revert to previous messages if there's an error
-      setMessages([
-        ...messages,
-        {
-          id: `error-${Date.now()}`,
-          role: "assistant",
-          content: "Sorry, there was an error processing your request.",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      );
+      // Revert to messages before the user message
+      setMessages(messages);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const clearError = () => setError(null);
+
   return {
     messages,
     isLoading,
+    error,
+    clearError,
     handleSubmit,
   };
 }

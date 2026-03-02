@@ -1,105 +1,132 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+}
+
+:root {
+  --background: #fafaf9;
+  --foreground: #1c1917;
+  --muted: #f5f5f4;
+  --muted-foreground: #78716c;
+  --border: #e7e5e4;
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+  --surface: #ffffff;
+  --surface-hover: #f5f5f4;
+  --destructive: #dc2626;
+  --success: #16a34a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0c0a09;
+    --foreground: #fafaf9;
+    --muted: #1c1917;
+    --muted-foreground: #a8a29e;
+    --border: #292524;
+    --accent: #6366f1;
+    --accent-foreground: #ffffff;
+    --surface: #1c1917;
+    --surface-hover: #292524;
+    --destructive: #ef4444;
+    --success: #22c55e;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Add fade-in animation for chat messages */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-/* Add thin scrollbar styling */
-.scrollbar-thin {
+/* Scrollbar */
+* {
   scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
-.scrollbar-thumb-white\/10 {
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-}
-
-.scrollbar-track-transparent::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
-.scrollbar-thumb-white\/10::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
   border-radius: 3px;
 }
 
-.scrollbar-track-transparent::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Add pulse animation for loading indicators */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-.animate-pulse {
-  animation: pulse 1.5s infinite;
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.delay-150 {
-  animation-delay: 0.15s;
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.delay-300 {
-  animation-delay: 0.3s;
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
-/* Add slide-in animation for settings panel */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out forwards;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Stagger children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }

@@ -1,28 +1,32 @@
-import { jitsuAnalytics } from "@jitsu/js";
-import { getSession } from "auth";
+// Server-side analytics tracking
+// No-ops gracefully when Jitsu is not configured
 
-export const getAnalytics = () => {
-  const analytics = jitsuAnalytics({
-    writeKey: process.env.JITSU_SERVER_WRITE_KEY,
-    host: process.env.NEXT_PUBLIC_JITSU_HOST,
-  });
+export const trackEvent = async (event: string, properties: Record<string, unknown>) => {
+  // Skip tracking if Jitsu is not configured
+  if (!process.env.JITSU_SERVER_WRITE_KEY || !process.env.NEXT_PUBLIC_JITSU_HOST) {
+    return;
+  }
 
-  return analytics;
-};
+  try {
+    const { jitsuAnalytics } = await import("@jitsu/js");
+    const { getSession } = await import("auth");
 
-export const trackEvent = async (event: string, properties: any) => {
-  const analytics = getAnalytics();
-  const session = await getSession();
+    const analytics = jitsuAnalytics({
+      writeKey: process.env.JITSU_SERVER_WRITE_KEY,
+      host: process.env.NEXT_PUBLIC_JITSU_HOST,
+    });
 
-  analytics.identify(session?.user.id, {
-    name: session?.user.name,
-    email: session?.user.email,
-    $doNotSend: true,
-  });
+    const session = await getSession();
 
-  if (session) {
-    analytics.track(event, properties);
+    if (session?.user) {
+      analytics.identify(session.user.id, {
+        name: session.user.name,
+        email: session.user.email,
+        $doNotSend: true,
+      });
+      analytics.track(event, properties);
+    }
+  } catch {
+    // Silently ignore tracking errors
   }
 };
-
-export const analytics = getAnalytics();

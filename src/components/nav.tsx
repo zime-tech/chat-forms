@@ -3,53 +3,70 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { FileText, LogOut, LogIn } from "lucide-react";
+import { LogOut, MessageSquareText } from "lucide-react";
 
-// Client-side authentication status check
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
-  const isLoading = status === "loading";
 
-  if (pathname.includes("/forms")) {
+  // Hide nav on form submission pages (public-facing)
+  if (pathname.startsWith("/forms/")) {
+    return null;
+  }
+
+  // Hide nav on the form builder page (has its own header)
+  if (pathname.startsWith("/dashboard/") && pathname !== "/dashboard") {
     return null;
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-16 backdrop-blur-md bg-black/30 border-r border-white/10 flex flex-col items-center py-6 z-50">
-      <div className="flex-shrink-0">
-        <Link href="/" className="flex items-center justify-center">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-            <FileText size={20} className="text-white" />
-          </div>
+    <nav className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-sm">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+        <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
+          <MessageSquareText size={20} className="text-accent" />
+          <span>Chat Forms</span>
         </Link>
-      </div>
 
-      <div className="mt-auto">
-        {isAuthenticated ? (
-          <button
-            onClick={async () => {
-              await signOut({ redirect: false });
-              router.push("/login");
-            }}
-            className="flex items-center justify-center h-10 w-10 rounded-full text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all"
-            title="Sign out"
-          >
-            <LogOut size={20} className="text-purple-400" />
-          </button>
-        ) : (
-          <Link
-            href="/login"
-            className="flex items-center justify-center h-10 w-10 rounded-full text-white bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all"
-            title="Sign in"
-          >
-            <LogIn size={20} className="text-purple-400" />
-          </Link>
-        )}
+        <div className="flex items-center gap-3">
+          {isAuthenticated ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={async () => {
+                  await signOut({ redirect: false });
+                  router.push("/login");
+                }}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors"
+              >
+                <LogOut size={14} />
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:opacity-90 transition-opacity"
+              >
+                Get started
+              </Link>
+            </>
+          )}
+        </div>
       </div>
-    </aside>
+    </nav>
   );
 }
